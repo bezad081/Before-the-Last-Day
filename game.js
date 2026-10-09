@@ -31,9 +31,27 @@ const landmarks = [
   {x:1830,w:230,h:.54,c:0x354b63,label:'CITY CLINIC'},
   {x:STATION_X,w:260,h:.47,c:0x3b536b,label:'CENTRAL STATION'}
 ];
+const checkpoints = [
+  {id:'bakery', x:610, lines:[
+    ['MIRA', 'That bakery is usually packed by now. Look at it. Nobody is even waiting outside.'],
+    ['NARRATOR', 'The door is locked. A handwritten sign says CLOSED, though the lights are still on inside.'],
+    ['YOU', 'Maybe they heard something before the rest of us.']
+  ]},
+  {id:'alert', x:1190, lines:[
+    ['PHONE NOTIFICATION', 'CITY ALERT: Transit delays reported. Avoid Central Station until further notice.'],
+    ['MIRA', 'That makes no sense. The station is where everyone is going.'],
+    ['NARRATOR', 'Across the street, a cyclist abandons his bike and runs. Nobody tries to stop him.']
+  ]},
+  {id:'clinic', x:1780, lines:[
+    ['NARRATOR', 'An ambulance sits outside the clinic with its rear doors open. No one is inside.'],
+    ['MIRA', 'We should turn around. We should really turn around.'],
+    ['YOU', 'And go where? We need to understand what is happening.']
+  ]}
+];
 const controls = {left:false,right:false,jump:false};
 let sceneRef = null;
 let gameStarted = false;
+let activeDialogueLines = null;
 
 function showToast(message) {
   toast.textContent = message;
@@ -41,24 +59,27 @@ function showToast(message) {
   window.clearTimeout(toastTimer);
   toastTimer = window.setTimeout(() => { toast.style.opacity = '0'; }, 2400);
 }
-function showDialogue(index) {
-  if (index < 0 || index >= story.length) {
+function showDialogue(index, lines = story) {
+  activeDialogueLines = lines;
+  if (index < 0 || index >= lines.length) {
     dialogue.style.display = 'none';
     return;
   }
   dialogue.dataset.index = String(index);
-  document.getElementById('speaker').textContent = story[index][0];
-  document.getElementById('line').textContent = story[index][1];
+  document.getElementById('speaker').textContent = lines[index][0];
+  document.getElementById('line').textContent = lines[index][1];
   dialogue.style.display = 'block';
 }
 function advanceDialogue() {
   if (dialogue.style.display !== 'block') return;
+  const lines = activeDialogueLines || story;
   const current = Number(dialogue.dataset.index || 0);
-  if (current >= story.length - 1) {
+  if (current >= lines.length - 1) {
     dialogue.style.display = 'none';
-    showToast('The street is no longer ordinary. Keep going.');
+    activeDialogueLines = null;
+    showToast(lines === story ? 'The street is no longer ordinary. Keep going.' : 'You notice something unsettling. Keep moving.');
   } else {
-    showDialogue(current + 1);
+    showDialogue(current + 1, lines);
   }
 }
 function beginGame() {
@@ -84,6 +105,7 @@ class MorningScene extends Phaser.Scene {
     this.completed = false;
     this.storyRunning = false;
     this.walkPhase = 0;
+    this.checkpointsTriggered = new Set();
   }
   create() {
     sceneRef = this;
@@ -257,6 +279,14 @@ class MorningScene extends Phaser.Scene {
         body.setVelocityY(-430);
       }
       if (dir) this.walkPhase += 0.22;
+      for (const checkpoint of checkpoints) {
+        if (!this.checkpointsTriggered.has(checkpoint.id) && this.player.x >= checkpoint.x) {
+          this.checkpointsTriggered.add(checkpoint.id);
+          body.setVelocityX(0);
+          showDialogue(0, checkpoint.lines);
+          break;
+        }
+      }
       const progress = Math.min(100, Math.round(this.player.x / (this.worldWidth - 100) * 100));
       objective.textContent = progress < 30 ? 'Reach the station' : progress < 58 ? 'Follow the main street' : progress < 84 ? 'Something feels wrong…' : 'Find the station entrance';
       if (this.player.x > this.worldWidth - 170) {
