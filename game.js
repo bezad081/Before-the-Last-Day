@@ -185,7 +185,7 @@ class MorningScene extends Phaser.Scene {
           if (dialogue.style.display === 'block') advanceDialogue();
           else controls.jump = true;
         }
-        if (key === 'talk') advanceDialogue();
+        if (key === 'talk') { if (dialogue.style.display === 'block') advanceDialogue(); else this.interactWithStreet(); }
       };
       const up = event => {
         event.preventDefault();
