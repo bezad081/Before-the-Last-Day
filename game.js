@@ -110,6 +110,11 @@ class MorningScene extends Phaser.Scene {
     this.facing = 1;
     this.breathPhase = 0;
     this.checkpointsTriggered = new Set();
+    this.clues = [
+      {id:'note', x:945, radius:105, title:'A CRUMPLED NOTE', text:'The damp note reads: “If the trains stop, do not follow the crowd underground.” No signature. No date.', discovered:false},
+      {id:'phone', x:1510, radius:112, title:'A PUBLIC PHONE', text:'The receiver is off the hook. A faint voice repeats a station announcement, then dissolves into static. Beneath the static, you hear someone whisper: “Platform zero.”', discovered:false},
+      {id:'case', x:2135, radius:120, title:'ABANDONED SUITCASE', text:'A phone rings inside the suitcase pocket. The lock is scratched from the inside. Someone has carved three short lines into the handle.', discovered:false}
+    ];
   }
   create() {
     sceneRef = this;
@@ -145,20 +150,58 @@ class MorningScene extends Phaser.Scene {
     });
     this.scale.on('resize', this.handleResize, this);
     this.drawWorld();
+    this.createClueInterface();
     this.bindTouchControls();
   }
   getGroundY() { return Math.floor(this.scale.height * 0.79); }
   startStory() { this.storyRunning = true; }
+  createClueInterface() {
+    const make = (id) => {
+      const el = document.createElement('div');
+      el.id = id;
+      el.style.cssText = 'position:absolute;z-index:20;left:50%;transform:translateX(-50%);padding:8px 13px;border-radius:10px;background:rgba(10,20,34,.88);border:1px solid rgba(255,255,255,.25);color:#f7f3e9;font:700 12px system-ui;letter-spacing:.02em;pointer-events:none;white-space:nowrap;display:none;box-shadow:0 8px 24px #0004';
+      document.getElementById('game').appendChild(el);
+      return el;
+    };
+    this.clueHint = make('clue-hint');
+    this.clueCounter = make('clue-counter');
+    this.clueHint.style.bottom = window.matchMedia('(max-width:650px)').matches ? '164px' : '100px';
+    this.clueCounter.style.left = 'auto';
+    this.clueCounter.style.right = '18px';
+    this.clueCounter.style.transform = 'none';
+    this.clueCounter.style.top = '92px';
+    this.clueCounter.style.bottom = 'auto';
+    this.clueCounter.style.display = 'block';
+    this.updateClueInterface();
+  }
+  updateClueInterface() {
+    if (!this.clueCounter) return;
+    const found = this.clues.filter(c => c.discovered).length;
+    this.clueCounter.textContent = 'CLUES FOUND  ' + found + ' / ' + this.clues.length;
+    const nearest = this.clues.filter(c => !c.discovered && Math.abs(this.player.x - c.x) <= c.radius)
+      .sort((a,b) => Math.abs(this.player.x-a.x)-Math.abs(this.player.x-b.x))[0];
+    if (nearest && this.storyRunning && dialogue.style.display !== 'block' && !this.completed) {
+      this.clueHint.textContent = 'E  ·  INSPECT ' + nearest.title;
+      this.clueHint.style.display = 'block';
+    } else {
+      this.clueHint.style.display = 'none';
+    }
+  }
   interactWithStreet() {
     if (!this.player || dialogue.style.display === 'block' || this.completed) return;
-    const spots = [
-      {x:945, radius:95, title:'A CRUMPLED NOTE', text:'The damp note reads: “If the trains stop, do not follow the crowd underground.” No signature. No date.'},
-      {x:1510, radius:105, title:'A PUBLIC PHONE', text:'The receiver is off the hook. A faint voice repeats a station announcement, then dissolves into static.'},
-      {x:2135, radius:110, title:'ABANDONED SUITCASE', text:'A suitcase sits beside the crossing. A phone is ringing inside a side pocket. Nobody comes back for it.'}
-    ];
-    const spot = spots.find(item => Math.abs(this.player.x - item.x) <= item.radius);
-    if (spot) showDialogue(0, [[spot.title, spot.text], ['NARRATOR', 'You look around again. The city seems to be changing faster than anyone can explain.']]);
-    else showToast('Nothing close enough to inspect. Look around as you walk.');
+    const spot = this.clues.filter(item => Math.abs(this.player.x - item.x) <= item.radius)
+      .sort((a,b) => Math.abs(this.player.x-a.x)-Math.abs(this.player.x-b.x))[0];
+    if (!spot) {
+      showToast('Move closer to a note, phone, or suitcase to inspect it.');
+      return;
+    }
+    if (spot.discovered) {
+      showToast('You have already examined this clue.');
+      return;
+    }
+    spot.discovered = true;
+    this.updateClueInterface();
+    showDialogue(0, [[spot.title, spot.text], ['NARRATOR', 'You remember the detail. It may matter later.']]);
   }
   handleResize(size) {
     const groundY = Math.floor(size.height * 0.79);
@@ -282,6 +325,27 @@ class MorningScene extends Phaser.Scene {
       detail.fillStyle(0x172a3e, 1).fillRoundedRect(b.x + 12, gy - 22, b.w - 24, 16, 3);
       detail.fillStyle(0xf5dfb7, 1).fillRect(b.x + 18, gy - 17, b.w - 36, 2);
     }
+    // Story clues are visible props in the world, not invisible interaction triggers.
+    // Crumpled note beside the curb.
+    detail.fillStyle(0x1c2a3a, 0.2).fillEllipse(945, gy + 2, 25, 5);
+    detail.fillStyle(0xd9d0b7, 1).fillRoundedRect(934, gy - 10, 22, 14, 2);
+    detail.fillStyle(0x9c988b, 1).fillTriangle(949, gy - 10, 956, gy - 10, 956, gy - 3);
+    detail.lineStyle(1, 0x777c7c, 1).lineBetween(938, gy - 5, 949, gy - 5);
+    detail.lineStyle(1, 0x777c7c, 1).lineBetween(938, gy - 1, 946, gy - 1);
+    // Public telephone kiosk.
+    detail.fillStyle(0x24364b, 1).fillRoundedRect(1496, gy - 98, 29, 98, 4);
+    detail.fillStyle(0x8ab4b7, 1).fillRoundedRect(1501, gy - 91, 19, 29, 3);
+    detail.fillStyle(0x17263a, 1).fillRect(1504, gy - 86, 13, 2);
+    detail.fillStyle(0x6c9a9c, 1).fillRoundedRect(1504, gy - 54, 13, 4, 2);
+    detail.lineStyle(2, 0xe4bd83, 1).lineBetween(1512, gy - 51, 1522, gy - 43);
+    detail.fillStyle(0x2c4055, 1).fillRoundedRect(1517, gy - 47, 8, 15, 3);
+    // Abandoned suitcase, with a handle and a tiny blinking phone.
+    detail.fillStyle(0x1c2a3a, 0.22).fillEllipse(2135, gy + 2, 43, 7);
+    detail.fillStyle(0x765344, 1).fillRoundedRect(2115, gy - 34, 39, 31, 5);
+    detail.lineStyle(3, 0x4b3b35, 1).strokeRoundedRect(2125, gy - 41, 18, 10, 3);
+    detail.fillStyle(0xc79b6e, 1).fillRect(2120, gy - 25, 3, 3);
+    detail.fillStyle(0x263548, 1).fillRoundedRect(2148, gy - 30, 11, 18, 2);
+    detail.fillStyle(0x83e7d0, 1).fillCircle(2153, gy - 25, 2);
     const vx = 1040, vy = gy - 34;
     detail.fillStyle(0x344b60, 1).fillRoundedRect(vx, vy, 112, 29, 6);
     detail.fillStyle(0x6f9eaa, 1).fillRoundedRect(vx + 12, vy + 4, 33, 12, 3);
@@ -383,6 +447,7 @@ class MorningScene extends Phaser.Scene {
       body.setVelocityX(0);
     }
     this.drawPlayer();
+    this.updateClueInterface();
     if (this.game.loop.frame % 3 === 0) this.drawPeople();
   }
 }
