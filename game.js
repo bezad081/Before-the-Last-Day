@@ -375,36 +375,99 @@ class MorningScene extends Phaser.Scene {
     const speed = Math.abs(p.body.velocity.x);
     const moving = speed > 18 && grounded;
     const airborne = !grounded;
-    const stride = moving ? Math.sin(this.walkPhase) * Math.min(6, speed / 35) : 0;
-    const swing = moving ? Math.sin(this.walkPhase + Math.PI) * 4 : 0;
-    const bob = moving ? Math.abs(Math.sin(this.walkPhase * 2)) * 1.5 : Math.sin(this.breathPhase) * 0.7;
-    const dir = this.facing, g = this.playerArt;
+    const running = moving && this.keys.SHIFT.isDown;
+    const dir = this.facing || 1;
+    const g = this.playerArt;
+    const gait = this.walkPhase;
+    const stride = moving ? Math.sin(gait) * (running ? 8.5 : 5.5) : 0;
+    const oppositeStride = moving ? Math.sin(gait + Math.PI) * (running ? 8.5 : 5.5) : 0;
+    const armSwing = moving ? Math.sin(gait + Math.PI) * (running ? 7 : 4.5) : 0;
+    const bounce = airborne ? 0 : moving ? Math.abs(Math.sin(gait * 2)) * (running ? 2.4 : 1.2) : Math.sin(this.breathPhase) * 0.55;
+    const lean = moving ? (running ? 3.2 : 1.2) * dir : 0;
+    const torsoX = x + lean;
+    const shoulderY = y - 8 + bounce;
+    const hipY = y + 10 + bounce;
+    const headY = y - 24 + bounce + (airborne ? 1 : 0);
+    const rearLeg = dir > 0 ? oppositeStride : stride;
+    const frontLeg = dir > 0 ? stride : oppositeStride;
+    const rearArm = dir > 0 ? -armSwing : armSwing;
+    const frontArm = -rearArm;
+
     g.clear();
-    g.fillStyle(0x152339, airborne ? 0.12 : 0.26).fillEllipse(x + 3, this.getGroundY() + 2, airborne ? 23 : 34, airborne ? 6 : 10);
-    const hipY = y + 11 + bob, shoulderY = y - 7 + bob;
-    const legA = airborne ? -4 : stride, legB = airborne ? 5 : -stride;
-    g.lineStyle(7, 0x263548, 1).lineBetween(x - 3 + legB * 0.4, hipY, x - 5 + legB, y + 21);
-    g.lineStyle(5, 0xe2b99a, 1).lineBetween(x - 5 + legB, y + 21, x - 9 + legB, y + 22);
-    g.lineStyle(7, 0x34475a, 1).lineBetween(x + 3 + legA * 0.35, hipY, x + 4 + legA, y + 21);
-    g.lineStyle(5, 0xe8c6a4, 1).lineBetween(x + 4 + legA, y + 21, x + 8 + legA, y + 22);
-    g.fillStyle(0x6c796b, 1).fillRoundedRect(x - dir * 12 - 5, y - 10 + bob, 10, 18, 3);
-    g.fillStyle(0x263b4a, 1).fillRoundedRect(x - 10, y - 13 + bob, 20, 26, 6);
-    g.fillStyle(0x3e6f70, 1).fillRoundedRect(x - 8, y - 12 + bob, 16, 23, 5);
-    g.fillStyle(0xd6b68b, 1).fillRect(x - 1, y - 10 + bob, 2, 18);
-    g.lineStyle(6, 0xe4b18c, 1).lineBetween(x - 8, shoulderY + 2, x - 10 - swing * 0.45, y + 5 + swing);
-    g.lineStyle(6, 0xe4b18c, 1).lineBetween(x + 8, shoulderY + 2, x + 10 + swing * 0.45, y + 5 - swing);
-    g.fillStyle(0x3e6f70, 1).fillRoundedRect(x - 11, shoulderY - 1, 6, 13, 3);
-    g.fillStyle(0x3e6f70, 1).fillRoundedRect(x + 5, shoulderY - 1, 6, 13, 3);
-    g.fillStyle(0xd7a17e, 1).fillRoundedRect(x - 3, y - 18 + bob, 6, 7, 2);
-    g.fillStyle(0xe8b58e, 1).fillEllipse(x, y - 24 + bob, 17, 19);
-    g.fillStyle(0x302b35, 1).fillEllipse(x - dir, y - 31 + bob, 19, 11);
-    g.fillStyle(0x302b35, 1).fillRoundedRect(x - 8, y - 30 + bob, 5, 10, 2);
-    g.fillStyle(0x302b35, 1).fillTriangle(x - 6, y - 27 + bob, x + 4, y - 28 + bob, x + 1, y - 22 + bob);
-    g.fillStyle(0xd49a78, 1).fillCircle(x + dir * 7, y - 23 + bob, 2.1);
-    g.fillStyle(0x272b34, 1).fillCircle(x + dir * 3.7, y - 25 + bob, 1.1);
-    g.fillStyle(0xd49a78, 1).fillTriangle(x + dir * 7, y - 23 + bob, x + dir * 11, y - 22 + bob, x + dir * 7, y - 21 + bob);
-    g.fillStyle(0xd5b28a, 1).fillRect(x - 8, y + 1 + bob, 3, 2);
-    g.lineStyle(1, 0x9bb4a8, 0.9).lineBetween(x - dir * 10, y - 5 + bob, x - dir * 10, y + 3 + bob);
+
+    // Soft contact shadow; it tightens when the character jumps.
+    g.fillStyle(0x101b2a, airborne ? 0.10 : 0.25)
+      .fillEllipse(x + 2, this.getGroundY() + 2, airborne ? 19 : 31 + speed * 0.015, airborne ? 5 : 8);
+
+    // Backpack sits behind the shoulders and shifts with each step.
+    g.fillStyle(0x283b46, 1).fillRoundedRect(torsoX - dir * 10 - 4, y - 13 + bounce, 11, 19, 4);
+    g.fillStyle(0x71806f, 1).fillRoundedRect(torsoX - dir * 10 - 3, y - 12 + bounce, 8, 16, 3);
+    g.fillStyle(0x3b4b50, 1).fillRoundedRect(torsoX - dir * 10 - 2, y - 7 + bounce, 6, 5, 2);
+
+    // Legs are drawn in two articulated sections with visible knees and shoes.
+    const drawLeg = (offset, amount, color, shoeColor) => {
+      const hipX = torsoX + offset;
+      const kneeX = hipX + amount * 0.42 + (airborne ? amount * 0.12 : 0);
+      const kneeY = y + 16 + bounce + (airborne ? (offset > 0 ? -3 : 2) : Math.abs(amount) * 0.12);
+      const ankleX = hipX + amount;
+      const ankleY = y + 21 + bounce + (airborne ? (offset > 0 ? -5 : -1) : Math.max(0, Math.sin(gait + (offset > 0 ? 0 : Math.PI))) * 2.1);
+      g.lineStyle(7, color, 1).lineBetween(hipX, hipY, kneeX, kneeY);
+      g.fillStyle(color, 1).fillCircle(kneeX, kneeY, 3.2);
+      g.lineStyle(5.5, color, 1).lineBetween(kneeX, kneeY, ankleX, ankleY);
+      // A small ankle highlight helps separate the boot from the trousers.
+      g.lineStyle(2, 0x9aa29b, 0.85).lineBetween(ankleX, ankleY - 1, ankleX, ankleY + 2);
+      g.fillStyle(shoeColor, 1).fillRoundedRect(ankleX - (dir > 0 ? 1 : 6), ankleY - 1, 10, 5, 2);
+      g.fillStyle(0xc7b79b, 0.75).fillRect(ankleX - (dir > 0 ? 0 : 5), ankleY + 3, 9, 1);
+    };
+    drawLeg(-4, rearLeg, 0x283747, 0x1e2936);
+    drawLeg(4, frontLeg, 0x344657, 0x263241);
+
+    // Jacket silhouette, hem, seams and folds.
+    g.fillStyle(0x1c303d, 1).fillRoundedRect(torsoX - 11, y - 15 + bounce, 22, 28, 6);
+    g.fillStyle(0x3e6f70, 1).fillRoundedRect(torsoX - 9, y - 15 + bounce, 18, 25, 5);
+    g.fillStyle(0x2d555a, 1).fillRoundedRect(torsoX - 9, y + 5 + bounce, 18, 7, 2);
+    g.fillStyle(0x9a9b7d, 1).fillRoundedRect(torsoX - 8, y + 10 + bounce, 16, 3, 1);
+    g.lineStyle(1.2, 0xc1c5a5, 0.9).lineBetween(torsoX, y - 12 + bounce, torsoX + dir * 1.5, y + 8 + bounce);
+    g.lineStyle(1, 0x24464c, 0.9).lineBetween(torsoX - 6, y - 2 + bounce, torsoX - 2, y + 2 + bounce);
+    g.lineStyle(1, 0x24464c, 0.9).lineBetween(torsoX + 4, y + 2 + bounce, torsoX + 7, y + 5 + bounce);
+    g.fillStyle(0xd6b68b, 1).fillRoundedRect(torsoX - 3, y - 12 + bounce, 6, 5, 2);
+
+    // Arms swing from the shoulder and bend at the elbow instead of moving as one line.
+    const drawArm = (side, swing, sleeveColor) => {
+      const sx = torsoX + side * 8;
+      const sy = shoulderY + 2;
+      const elbowX = sx + side * 3 + swing * 0.48;
+      const elbowY = y + 1 + bounce + (running ? Math.abs(swing) * 0.13 : 0);
+      const handX = elbowX + side * 1.5 + swing * 0.55;
+      const handY = y + 8 + bounce - swing * 0.18;
+      g.lineStyle(7, sleeveColor, 1).lineBetween(sx, sy, elbowX, elbowY);
+      g.fillStyle(0x263d45, 1).fillCircle(elbowX, elbowY, 3.1);
+      g.lineStyle(5.3, 0xe0ad88, 1).lineBetween(elbowX, elbowY, handX, handY);
+      g.fillStyle(0xe7b58f, 1).fillEllipse(handX, handY, 4.2, 5.2);
+      g.fillStyle(0x6b8b83, 1).fillRoundedRect(sx - 3, sy - 1, 6, 7, 2);
+    };
+    drawArm(-1, rearArm, 0x31565b);
+    drawArm(1, frontArm, 0x3e6f70);
+
+    // Neck and head. The head turns slightly toward the direction of travel.
+    g.fillStyle(0xd09b79, 1).fillRoundedRect(x - 3, y - 19 + bounce, 6, 8, 2);
+    g.fillStyle(0x1d202a, 1).fillEllipse(x - dir * 1.2, headY - 7, 20, 11);
+    g.fillStyle(0x302b35, 1).fillRoundedRect(x - 9, headY - 7, 5, 11, 2);
+    g.fillStyle(0xe6b18b, 1).fillEllipse(x + dir * 0.5, headY, 16.5, 18.5);
+    // Ear, nose and eye are placed on the leading side of the face.
+    g.fillStyle(0xd49a78, 1).fillCircle(x + dir * 7, headY + 1, 2.1);
+    g.fillStyle(0xe2a782, 1).fillTriangle(
+      x + dir * 6, headY + 1,
+      x + dir * 11, headY + 2,
+      x + dir * 6, headY + 4
+    );
+    g.fillStyle(0x272b34, 1).fillCircle(x + dir * 3.8, headY - 2, 1.1);
+    g.lineStyle(1, 0x8b5c4c, 0.75).lineBetween(x + dir * 3, headY + 6, x + dir * 6, headY + 6.5);
+    g.fillStyle(0x302b35, 1).fillTriangle(x - 7, headY - 6, x + 5, headY - 8, x + 1, headY - 2);
+    // Subtle hair tufts and jacket collar give the silhouette a less mannequin-like finish.
+    g.fillStyle(0x302b35, 1).fillTriangle(x - 7, headY - 8, x - 1, headY - 12, x + 1, headY - 7);
+    g.fillStyle(0x24454b, 1).fillTriangle(torsoX - dir * 4, y - 14 + bounce, torsoX, y - 7 + bounce, torsoX + dir * 3, y - 14 + bounce);
+    g.lineStyle(1, 0x8eb0a2, 0.8).lineBetween(torsoX - dir * 9, y - 8 + bounce, torsoX - dir * 9, y + 1 + bounce);
   }
   update() {
     if (!this.player || !this.player.body) return;
