@@ -96,7 +96,7 @@ class MorningScene extends Phaser.Scene {
     this.playerArt = this.add.graphics().setDepth(10);
     this.floorArt = this.add.graphics().setDepth(-1);
     const groundY = this.getGroundY();
-    this.floor = this.add.rectangle(this.worldWidth / 2, groundY + (this.scale.height - groundY) / 2, this.worldWidth, this.scale.height - groundY, 0x596579).setOrigin(0.5, 0);
+    this.floor = this.add.rectangle(this.worldWidth / 2, groundY, this.worldWidth, Math.max(1, this.scale.height - groundY), 0x596579).setOrigin(0.5, 0);
     this.physics.add.existing(this.floor, true);
     this.floor.setVisible(false);
     this.player = this.add.rectangle(90, groundY - PLAYER_HEIGHT / 2, PLAYER_WIDTH, PLAYER_HEIGHT, 0x000000, 0);
@@ -253,7 +253,7 @@ class MorningScene extends Phaser.Scene {
     if (this.storyRunning && dialogue.style.display !== 'block' && !this.completed) {
       const dir = (right ? 1 : 0) - (left ? 1 : 0);
       body.setVelocityX(dir * 190);
-      if ((this.cursors.up.isDown || this.keys.W.isDown || this.keys.SPACE.isDown || controls.jump) && body.blocked.down) {
+      if ((this.cursors.up.isDown || this.keys.W.isDown || this.keys.SPACE.isDown || controls.jump) && (body.blocked.down || body.touching.down)) {
         body.setVelocityY(-430);
       }
       if (dir) this.walkPhase += 0.22;
@@ -271,7 +271,7 @@ class MorningScene extends Phaser.Scene {
       body.setVelocityX(0);
     }
     this.drawPlayer();
-    if (this.game.loop.frame % 3 === 0) this.drawPeople();
+    if (this.game.loop.frame % 3 === 0) { this.drawPeople(); this.drawWorld(); }
   }
 }
 
