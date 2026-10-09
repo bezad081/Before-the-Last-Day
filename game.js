@@ -766,7 +766,12 @@ class MorningScene extends Phaser.Scene {
     this.drawPlayer();
     this.drawAtmosphere();
     this.updateClueInterface();
-    if (this.game.loop.frame % 3 === 0) this.drawPeople();
+    if (this.game.loop.frame % 3 === 0) {
+      // Redraw the screen-fixed skyline with the current camera offset so its
+      // layered buildings genuinely drift at different parallax speeds.
+      this.drawBackground();
+      this.drawPeople();
+    }
   }
 }
 
