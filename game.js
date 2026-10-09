@@ -171,12 +171,13 @@ class MorningScene extends Phaser.Scene {
     this.clueCounter.style.transform = 'none';
     this.clueCounter.style.top = '92px';
     this.clueCounter.style.bottom = 'auto';
-    this.clueCounter.style.display = 'block';
+    this.clueCounter.style.display = gameStarted ? 'block' : 'none';
     this.updateClueInterface();
   }
   updateClueInterface() {
     if (!this.clueCounter) return;
     const found = this.clues.filter(c => c.discovered).length;
+    this.clueCounter.style.display = gameStarted ? 'block' : 'none';
     this.clueCounter.textContent = 'CLUES FOUND  ' + found + ' / ' + this.clues.length;
     const nearest = this.clues.filter(c => !c.discovered && Math.abs(this.player.x - c.x) <= c.radius)
       .sort((a,b) => Math.abs(this.player.x-a.x)-Math.abs(this.player.x-b.x))[0];
