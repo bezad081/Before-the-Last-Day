@@ -4,13 +4,22 @@ A colorful, story-first 2D side-scrolling adventure about an ordinary morning at
 
 ## Play the prototype
 
-The first browser prototype lives in `index.html` and uses plain HTML, CSS, and Canvas JavaScript. It requires no install, game engine, external assets, or build step.
+The browser prototype uses `index.html` for structure, `styles.css` for presentation, and `game.js` for the Canvas-based game loop and interactions. It uses plain HTML, CSS, and JavaScript, with no install, external assets, or build step.
 
 ### Controls
 - **Move:** A / D or Left / Right arrows
 - **Jump:** Space, W, or Up arrow
 - **Continue story dialogue:** E, Enter, or Space
 - **Touch devices:** use the on-screen controls
+
+## Project structure
+
+- `index.html` — accessible page structure and game overlays
+- `styles.css` — responsive interface and touch-control styling
+- `game.js` — rendering, movement, camera, dialogue, and chapter flow
+- `story/CHAPTER_01.md` — Chapter 1 story design
+
+The code is intentionally split into separate files before expanding the game systems, making later gameplay, story, and UI changes easier to review and test.
 
 ## Current demo scope
 
