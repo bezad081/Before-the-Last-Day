@@ -27,11 +27,11 @@ const story = [
   ['YOU', 'We should get to the station. Come on.']
 ];
 const landmarks = [
-  {x:370,w:170,h:.36,c:0x49657b,label:'BAKERY'},
-  {x:790,w:205,h:.49,c:0x38516b,label:'BOOKSHOP'},
-  {x:1320,w:185,h:.41,c:0x536b7b,label:'FLOWERS'},
-  {x:1830,w:230,h:.54,c:0x354b63,label:'CITY CLINIC'},
-  {x:STATION_X,w:260,h:.47,c:0x3b536b,label:'CENTRAL STATION'}
+  {x:370,w:170,h:.36,c:0x3f9b98,label:'BAKERY'},
+  {x:790,w:205,h:.49,c:0xe5a06e,label:'BOOKSHOP'},
+  {x:1320,w:185,h:.41,c:0x79b6a1,label:'FLOWERS'},
+  {x:1830,w:230,h:.54,c:0x648aa5,label:'CITY CLINIC'},
+  {x:STATION_X,w:260,h:.47,c:0x4e7b88,label:'CENTRAL STATION'}
 ];
 const checkpoints = [
   {id:'bakery', x:610, lines:[
@@ -263,42 +263,87 @@ class MorningScene extends Phaser.Scene {
   }
   drawBackground() {
     const width = this.scale.width, height = this.scale.height;
+    const scroll = this.cameras.main.scrollX;
     this.background.clear();
-    this.background.fillGradientStyle(0x172b48, 0x172b48, 0xf5c18d, 0xf5c18d, 1);
+    // Bright, high-contrast morning palette: vivid skies against a city that feels
+    // strangely empty. This is an original homage to Zom 100's color energy,
+    // not a recreation of its characters or exact shots.
+    this.background.fillGradientStyle(0x35c8f0, 0x35c8f0, 0xffd28a, 0xffd28a, 1);
     this.background.fillRect(0, 0, width, height);
-    this.background.fillStyle(0xffe0a0, 1);
-    this.background.fillCircle(width * 0.77, height * 0.27, Math.min(width, height) * 0.075);
-    for (let i = 0; i < 7; i++) {
-      const x = ((i * 220 - this.cameras.main.scrollX * 0.12) % (width + 300) + width + 300) % (width + 300) - 100;
-      this.background.fillStyle(i % 2 ? 0x5b6279 : 0x475a72, 1);
-      this.background.fillTriangle(x, height * 0.67, x + 95, height * (0.38 + (i % 3) * 0.05), x + 220, height * 0.67);
+    this.background.fillStyle(0xfff4b0, 0.16);
+    this.background.fillCircle(width * 0.78, height * 0.25, Math.min(width, height) * 0.19);
+    this.background.fillStyle(0xffef9b, 1);
+    this.background.fillCircle(width * 0.78, height * 0.25, Math.min(width, height) * 0.064);
+    // Graphic clouds add a clean, illustrative anime-sky silhouette.
+    for (let i = 0; i < 5; i++) {
+      const x = ((i * 265 - scroll * 0.06) % (width + 340) + width + 340) % (width + 340) - 150;
+      const y = height * (0.13 + (i % 3) * 0.075);
+      this.background.fillStyle(0xffffff, 0.62);
+      this.background.fillEllipse(x, y, 76, 20);
+      this.background.fillEllipse(x + 18, y - 8, 43, 22);
+      this.background.fillEllipse(x + 40, y, 50, 16);
+      this.background.fillStyle(0x39b7dc, 0.18);
+      this.background.fillEllipse(x + 20, y + 6, 65, 7);
     }
+    for (let i = 0; i < 7; i++) {
+      const x = ((i * 220 - scroll * 0.12) % (width + 300) + width + 300) % (width + 300) - 100;
+      this.background.fillStyle(i % 2 ? 0x57c2b0 : 0x40aeb3, 1);
+      this.background.fillTriangle(x, height * 0.68, x + 95, height * (0.39 + (i % 3) * 0.05), x + 220, height * 0.68);
+    }
+    const skyline = [0x527c94,0x47778a,0x6b8e9b,0x4d7188,0x658b91];
     for (let i = 0; i < 17; i++) {
-      const x = ((i * 145 - this.cameras.main.scrollX * 0.23) % (width + 200) + width + 200) % (width + 200) - 80;
+      const x = ((i * 145 - scroll * 0.23) % (width + 200) + width + 200) % (width + 200) - 80;
       const bh = height * (0.15 + (i * 37 % 17) / 100);
-      this.background.fillStyle(i % 2 ? 0x33465f : 0x3b4c65, 1);
+      this.background.fillStyle(skyline[i % skyline.length], 1);
       this.background.fillRect(x, height * 0.68 - bh, 95, bh);
-      this.background.fillStyle(0xf6cf9a, 0.4);
+      this.background.fillStyle(i % 3 === 0 ? 0xffd17d : 0xbdeaf0, 0.8);
       for (let wy = height * 0.68 - bh + 15; wy < height * 0.66; wy += 17) {
-        for (let wx = x + 12; wx < x + 84; wx += 19) this.background.fillRect(wx, wy, 6, 8);
+        for (let wx = x + 12; wx < x + 84; wx += 19) this.background.fillRect(wx, wy, 7, 9);
       }
+      this.background.fillStyle(0xffffff, 0.22).fillRect(x + 5, height * 0.68 - bh, 4, bh);
+    }
+    // A few vivid graphic flecks in the distant skyline hint at painted signs.
+    for (let i = 0; i < 9; i++) {
+      const x = ((i * 173 - scroll * 0.2) % (width + 180) + width + 180) % (width + 180) - 60;
+      this.background.fillStyle([0xff6684,0xffd166,0x55e0c0][i % 3], 0.78);
+      this.background.fillRect(x, height * (0.55 + (i % 3) * 0.025), 13 + (i % 4) * 5, 3);
     }
   }
   drawWorld() {
     const width = this.scale.width, height = this.scale.height, gy = this.getGroundY();
     this.drawBackground();
     this.worldArt.clear();
-    this.worldArt.fillStyle(0xd9a47f, 1).fillRect(0, gy, this.worldWidth, 12);
-    this.worldArt.fillStyle(0x596579, 1).fillRect(0, gy + 12, this.worldWidth, height - gy - 12);
-    this.worldArt.fillStyle(0xead2ad, 1).fillRect(0, gy, this.worldWidth, 12);
+    this.worldArt.fillStyle(0xf2a77b, 1).fillRect(0, gy, this.worldWidth, 12);
+    this.worldArt.fillStyle(0x667783, 1).fillRect(0, gy + 12, this.worldWidth, height - gy - 12);
+    this.worldArt.fillStyle(0xf5d8a3, 1).fillRect(0, gy, this.worldWidth, 12);
+    this.worldArt.fillStyle(0x8d9693, 0.48).fillRect(0, gy + 12, this.worldWidth, 2);
     for (let x = 0; x < this.worldWidth; x += 100) {
-      this.worldArt.fillStyle(0xf4d5a0, 1).fillRect(x, gy + height * 0.12, 42, 4);
+      this.worldArt.fillStyle(0xffe4a0, 1).fillRect(x, gy + height * 0.12, 42, 4);
+    }
+    // Saturated paint splashes on the road create a lively graphic contrast
+    // with the unsettling quiet. Every splash is drawn from simple original shapes.
+    const splashes = [
+      {x:260,y:gy+height*.17,c:0xff6482,r:19},
+      {x:680,y:gy+height*.23,c:0x35d7c0,r:24},
+      {x:1135,y:gy+height*.18,c:0xffd166,r:18},
+      {x:1585,y:gy+height*.22,c:0xf36fa3,r:21},
+      {x:1985,y:gy+height*.16,c:0x52d6ed,r:25},
+      {x:2460,y:gy+height*.2,c:0xff8b58,r:20}
+    ];
+    for (const s of splashes) {
+      this.worldArt.fillStyle(s.c, 0.85).fillEllipse(s.x, s.y, s.r*2.1, s.r*.72);
+      this.worldArt.fillStyle(s.c, 0.92).fillCircle(s.x-s.r*.7, s.y-s.r*.45, s.r*.24);
+      this.worldArt.fillStyle(s.c, 0.9).fillCircle(s.x+s.r*.82, s.y+s.r*.2, s.r*.17);
+      this.worldArt.fillStyle(s.c, 0.86).fillCircle(s.x-s.r*.15, s.y+s.r*.38, s.r*.13);
+      this.worldArt.fillStyle(s.c, 0.72).fillTriangle(s.x-s.r*.7,s.y-s.r*.2,s.x-s.r*1.35,s.y-s.r*.75,s.x-s.r*.48,s.y-s.r*.62);
     }
     for (const b of landmarks) {
       const bh = height * b.h, by = gy - bh;
       this.worldArt.fillStyle(b.c, 1).fillRect(b.x, by, b.w, bh);
-      this.worldArt.fillStyle(0xe5c4a0, 1).fillRect(b.x - 5, by, b.w + 10, 8);
-      this.worldArt.fillStyle(0x24364d, 1).fillRect(b.x + 12, by + 18, b.w - 24, 26);
+      this.worldArt.fillStyle(0xffd28a, 1).fillRect(b.x - 5, by, b.w + 10, 8);
+      this.worldArt.fillStyle(0x253d50, 1).fillRect(b.x + 12, by + 18, b.w - 24, 26);
+      this.worldArt.fillStyle([0xff6684,0xffd166,0x52d6c0,0x71d4ee,0xf39a65][landmarks.indexOf(b)], 1)
+        .fillRect(b.x + 15, by + 21, Math.max(20, b.w - 30), 3);
       for (let wy = by + 60; wy < gy - 45; wy += 42) {
         for (let wx = b.x + 15; wx < b.x + b.w - 18; wx += 36) {
           this.worldArt.fillStyle(((wx + wy) % 3) ? 0xf7d69b : 0x9bb8c7, 1).fillRect(wx, wy, 18, 22);
@@ -339,10 +384,10 @@ class MorningScene extends Phaser.Scene {
     }
     for (const b of landmarks) {
       const awningY = gy - Math.min(height * b.h, 210) + 53;
-      detail.fillStyle(0xb86e61, 1).fillRect(b.x - 3, awningY, b.w + 6, 12);
-      for (let ax = b.x; ax < b.x + b.w; ax += 22) detail.fillStyle(0xf1d5b0, 0.92).fillRect(ax, awningY, 10, 12);
-      detail.fillStyle(0x172a3e, 1).fillRoundedRect(b.x + 12, gy - 22, b.w - 24, 16, 3);
-      detail.fillStyle(0xf5dfb7, 1).fillRect(b.x + 18, gy - 17, b.w - 36, 2);
+      detail.fillStyle([0xff6684,0xffd166,0x43c7b7,0x6bc9e4,0xff985d][landmarks.indexOf(b)], 1).fillRect(b.x - 3, awningY, b.w + 6, 12);
+      for (let ax = b.x; ax < b.x + b.w; ax += 22) detail.fillStyle(0xfff0ce, 0.95).fillRect(ax, awningY, 10, 12);
+      detail.fillStyle(0x20394b, 1).fillRoundedRect(b.x + 12, gy - 22, b.w - 24, 16, 3);
+      detail.fillStyle(0xffe4a0, 1).fillRect(b.x + 18, gy - 17, b.w - 36, 2);
     }
     // Story clues are visible props in the world, not invisible interaction triggers.
     // Crumpled note beside the curb.
@@ -539,9 +584,9 @@ class MorningScene extends Phaser.Scene {
       .fillEllipse(x + 2, this.getGroundY() + 2, airborne ? 19 : 31 + speed * 0.015, airborne ? 5 : 8);
 
     // Backpack sits behind the shoulders and shifts with each step.
-    g.fillStyle(0x283b46, 1).fillRoundedRect(torsoX - dir * 10 - 4, y - 13 + bounce, 11, 19, 4);
-    g.fillStyle(0x71806f, 1).fillRoundedRect(torsoX - dir * 10 - 3, y - 12 + bounce, 8, 16, 3);
-    g.fillStyle(0x3b4b50, 1).fillRoundedRect(torsoX - dir * 10 - 2, y - 7 + bounce, 6, 5, 2);
+    g.fillStyle(0x183e50, 1).fillRoundedRect(torsoX - dir * 10 - 4, y - 13 + bounce, 11, 19, 4);
+    g.fillStyle(0x36a8b5, 1).fillRoundedRect(torsoX - dir * 10 - 3, y - 12 + bounce, 8, 16, 3);
+    g.fillStyle(0x197d8a, 1).fillRoundedRect(torsoX - dir * 10 - 2, y - 7 + bounce, 6, 5, 2);
 
     // Legs are drawn in two articulated sections with visible knees and shoes.
     const drawLeg = (offset, amount, color, shoeColor) => {
@@ -555,21 +600,21 @@ class MorningScene extends Phaser.Scene {
       g.lineStyle(5.5, color, 1).lineBetween(kneeX, kneeY, ankleX, ankleY);
       // A small ankle highlight helps separate the boot from the trousers.
       g.lineStyle(2, 0x9aa29b, 0.85).lineBetween(ankleX, ankleY - 1, ankleX, ankleY + 2);
-      g.fillStyle(shoeColor, 1).fillRoundedRect(ankleX - (dir > 0 ? 1 : 6), ankleY - 1, 10, 5, 2);
-      g.fillStyle(0xc7b79b, 0.75).fillRect(ankleX - (dir > 0 ? 0 : 5), ankleY + 3, 9, 1);
+      g.fillStyle(0xd8ff70, 1).fillRoundedRect(ankleX - (dir > 0 ? 1 : 6), ankleY - 1, 10, 5, 2);
+      g.fillStyle(0xffffff, 0.92).fillRect(ankleX - (dir > 0 ? 0 : 5), ankleY + 3, 9, 1);
     };
-    drawLeg(-4, rearLeg, 0x283747, 0x1e2936);
-    drawLeg(4, frontLeg, 0x344657, 0x263241);
+    drawLeg(-4, rearLeg, 0x263546, 0x273644);
+    drawLeg(4, frontLeg, 0x354657, 0x293847);
 
     // Jacket silhouette, hem, seams and folds.
-    g.fillStyle(0x1c303d, 1).fillRoundedRect(torsoX - 11, y - 15 + bounce, 22, 28, 6);
-    g.fillStyle(0x3e6f70, 1).fillRoundedRect(torsoX - 9, y - 15 + bounce, 18, 25, 5);
-    g.fillStyle(0x2d555a, 1).fillRoundedRect(torsoX - 9, y + 5 + bounce, 18, 7, 2);
-    g.fillStyle(0x9a9b7d, 1).fillRoundedRect(torsoX - 8, y + 10 + bounce, 16, 3, 1);
-    g.lineStyle(1.2, 0xc1c5a5, 0.9).lineBetween(torsoX, y - 12 + bounce, torsoX + dir * 1.5, y + 8 + bounce);
-    g.lineStyle(1, 0x24464c, 0.9).lineBetween(torsoX - 6, y - 2 + bounce, torsoX - 2, y + 2 + bounce);
-    g.lineStyle(1, 0x24464c, 0.9).lineBetween(torsoX + 4, y + 2 + bounce, torsoX + 7, y + 5 + bounce);
-    g.fillStyle(0xd6b68b, 1).fillRoundedRect(torsoX - 3, y - 12 + bounce, 6, 5, 2);
+    g.fillStyle(0x145844, 1).fillRoundedRect(torsoX - 11, y - 15 + bounce, 22, 28, 6);
+    g.fillStyle(0x31a76e, 1).fillRoundedRect(torsoX - 9, y - 15 + bounce, 18, 25, 5);
+    g.fillStyle(0x218b60, 1).fillRoundedRect(torsoX - 9, y + 5 + bounce, 18, 7, 2);
+    g.fillStyle(0xffd65c, 1).fillRoundedRect(torsoX - 8, y + 10 + bounce, 16, 3, 1);
+    g.lineStyle(1.2, 0xb8f0c9, 0.95).lineBetween(torsoX, y - 12 + bounce, torsoX + dir * 1.5, y + 8 + bounce);
+    g.lineStyle(1, 0x176b50, 0.9).lineBetween(torsoX - 6, y - 2 + bounce, torsoX - 2, y + 2 + bounce);
+    g.lineStyle(1, 0x176b50, 0.9).lineBetween(torsoX + 4, y + 2 + bounce, torsoX + 7, y + 5 + bounce);
+    g.fillStyle(0xffd65c, 1).fillRoundedRect(torsoX - 3, y - 12 + bounce, 6, 5, 2);
 
     // Arms swing from the shoulder and bend at the elbow instead of moving as one line.
     const drawArm = (side, swing, sleeveColor) => {
@@ -585,8 +630,8 @@ class MorningScene extends Phaser.Scene {
       g.fillStyle(0xe7b58f, 1).fillEllipse(handX, handY, 4.2, 5.2);
       g.fillStyle(0x6b8b83, 1).fillRoundedRect(sx - 3, sy - 1, 6, 7, 2);
     };
-    drawArm(-1, rearArm, 0x31565b);
-    drawArm(1, frontArm, 0x3e6f70);
+    drawArm(-1, rearArm, 0x23895f);
+    drawArm(1, frontArm, 0x31a76e);
 
     // Neck and head. The head turns slightly toward the direction of travel.
     g.fillStyle(0xd09b79, 1).fillRoundedRect(x - 3, y - 19 + bounce, 6, 8, 2);
