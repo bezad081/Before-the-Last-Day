@@ -124,6 +124,7 @@ class MorningScene extends Phaser.Scene {
     this.background = this.add.graphics().setDepth(-20).setScrollFactor(0);
     this.worldArt = this.add.graphics().setDepth(-5);
     this.peopleArt = this.add.graphics().setDepth(2);
+    this.atmosphereArt = this.add.graphics().setDepth(4);
     this.playerArt = this.add.graphics().setDepth(10);
     this.floorArt = this.add.graphics().setDepth(-1);
     const groundY = this.getGroundY();
@@ -545,6 +546,24 @@ class MorningScene extends Phaser.Scene {
       this.peopleArt.lineStyle(3, 0xd9a783, 1)
         .lineBetween(x + 7 + sway, gy - 25, x + 8 + step, gy - 17);
     }
+    // More varied clothing silhouettes keep the street from reading as repeated icons.
+    const extras = [
+      {x:360,c:0xffbf69,bag:0x2f6572},
+      {x:1015,c:0x6bd3c1,bag:0x2c4d5c},
+      {x:1880,c:0xe77985,bag:0x4e6674},
+      {x:2325,c:0x7bbbe4,bag:0x38556a}
+    ];
+    for (const person of extras) {
+      const px = person.x + Math.sin(this.time.now / 500 + person.x) * 2;
+      const py = gy - 1;
+      this.peopleArt.fillStyle(0x142238, 0.2).fillEllipse(px, py, 21, 5);
+      this.peopleArt.fillStyle(person.bag, 1).fillRoundedRect(px - 9, gy - 29, 5, 14, 2);
+      this.peopleArt.fillStyle(person.c, 1).fillRoundedRect(px - 6, gy - 31, 12, 24, 4);
+      this.peopleArt.fillStyle(0xe7b58f, 1).fillCircle(px, gy - 37, 6.5);
+      this.peopleArt.fillStyle(0x302b35, 1).fillEllipse(px, gy - 41, 13, 7);
+      this.peopleArt.lineStyle(3, 0x26384b, 1).lineBetween(px - 3, gy - 10, px - 5, gy - 2);
+      this.peopleArt.lineStyle(3, 0x26384b, 1).lineBetween(px + 3, gy - 10, px + 5, gy - 2);
+    }
     // One pedestrian stands still, staring at the station rather than following the crowd.
     const strangerX = 1615;
     this.peopleArt.fillStyle(0x152237, 0.22).fillEllipse(strangerX, gy - 1, 22, 5);
@@ -587,6 +606,10 @@ class MorningScene extends Phaser.Scene {
     g.fillStyle(0x183e50, 1).fillRoundedRect(torsoX - dir * 10 - 4, y - 13 + bounce, 11, 19, 4);
     g.fillStyle(0x36a8b5, 1).fillRoundedRect(torsoX - dir * 10 - 3, y - 12 + bounce, 8, 16, 3);
     g.fillStyle(0x197d8a, 1).fillRoundedRect(torsoX - dir * 10 - 2, y - 7 + bounce, 6, 5, 2);
+    g.fillStyle(0xffd65c, 1).fillRoundedRect(torsoX - dir * 10 - 2, y - 3 + bounce, 3, 3, 1);
+    // Backpack straps read separately from the torso in both facing directions.
+    g.lineStyle(2, 0x164d55, 0.95).lineBetween(torsoX - dir * 5, y - 12 + bounce, torsoX + dir * 5, y + 7 + bounce);
+    g.lineStyle(1, 0x8ce0d4, 0.8).lineBetween(torsoX - dir * 5, y - 10 + bounce, torsoX + dir * 4, y + 5 + bounce);
 
     // Legs are drawn in two articulated sections with visible knees and shoes.
     const drawLeg = (offset, amount, color, shoeColor) => {
@@ -614,6 +637,10 @@ class MorningScene extends Phaser.Scene {
     g.lineStyle(1.2, 0xb8f0c9, 0.95).lineBetween(torsoX, y - 12 + bounce, torsoX + dir * 1.5, y + 8 + bounce);
     g.lineStyle(1, 0x176b50, 0.9).lineBetween(torsoX - 6, y - 2 + bounce, torsoX - 2, y + 2 + bounce);
     g.lineStyle(1, 0x176b50, 0.9).lineBetween(torsoX + 4, y + 2 + bounce, torsoX + 7, y + 5 + bounce);
+    // A small asymmetric chest patch and seam make the jacket feel designed, not generic.
+    g.fillStyle(0xffda59, 1).fillRoundedRect(torsoX + dir * 3, y - 5 + bounce, 4, 5, 1);
+    g.fillStyle(0x145844, 1).fillRect(torsoX + dir * 4, y - 4 + bounce, 2, 1);
+    g.lineStyle(1, 0x6bd79e, 0.9).lineBetween(torsoX - dir * 7, y + 3 + bounce, torsoX - dir * 4, y + 6 + bounce);
     g.fillStyle(0xffd65c, 1).fillRoundedRect(torsoX - 3, y - 12 + bounce, 6, 5, 2);
 
     // Arms swing from the shoulder and bend at the elbow instead of moving as one line.
@@ -635,23 +662,54 @@ class MorningScene extends Phaser.Scene {
 
     // Neck and head. The head turns slightly toward the direction of travel.
     g.fillStyle(0xd09b79, 1).fillRoundedRect(x - 3, y - 19 + bounce, 6, 8, 2);
-    g.fillStyle(0x1d202a, 1).fillEllipse(x - dir * 1.2, headY - 7, 20, 11);
+    g.fillStyle(0x20232c, 1).fillEllipse(x - dir * 1.2, headY - 7, 20, 11);
     g.fillStyle(0x302b35, 1).fillRoundedRect(x - 9, headY - 7, 5, 11, 2);
     g.fillStyle(0xe6b18b, 1).fillEllipse(x + dir * 0.5, headY, 16.5, 18.5);
-    // Ear, nose and eye are placed on the leading side of the face.
+    // Layered fringe and a few sharp, uneven tufts create an original anime-like silhouette.
+    g.fillStyle(0x20232c, 1).fillTriangle(x - 10, headY - 7, x - 7, headY - 15, x - 2, headY - 7);
+    g.fillStyle(0x302b35, 1).fillTriangle(x - 7, headY - 8, x - 3, headY - 14, x + 1, headY - 7);
+    g.fillStyle(0x20232c, 1).fillTriangle(x - 3, headY - 8, x + 3, headY - 15, x + 5, headY - 5);
+    g.fillStyle(0x302b35, 1).fillTriangle(x + 2, headY - 7, x + 8, headY - 12, x + 7, headY - 2);
+    g.fillStyle(0x4a4650, 0.9).fillTriangle(x - 5, headY - 10, x - 2, headY - 13, x - 1, headY - 8);
+    // Ear, nose, eye and brow are placed on the leading side of the face.
     g.fillStyle(0xd49a78, 1).fillCircle(x + dir * 7, headY + 1, 2.1);
     g.fillStyle(0xe2a782, 1).fillTriangle(
       x + dir * 6, headY + 1,
       x + dir * 11, headY + 2,
       x + dir * 6, headY + 4
     );
-    g.fillStyle(0x272b34, 1).fillCircle(x + dir * 3.8, headY - 2, 1.1);
+    g.fillStyle(0xfff5db, 1).fillEllipse(x + dir * 3.8, headY - 2, 3.3, 4.1);
+    g.fillStyle(0x272b34, 1).fillCircle(x + dir * 4.2, headY - 2, 1.2);
+    g.fillStyle(0x302b35, 1).fillTriangle(x + dir * 1, headY - 5, x + dir * 6, headY - 5, x + dir * 5, headY - 4);
     g.lineStyle(1, 0x8b5c4c, 0.75).lineBetween(x + dir * 3, headY + 6, x + dir * 6, headY + 6.5);
-    g.fillStyle(0x302b35, 1).fillTriangle(x - 7, headY - 6, x + 5, headY - 8, x + 1, headY - 2);
-    // Subtle hair tufts and jacket collar give the silhouette a less mannequin-like finish.
-    g.fillStyle(0x302b35, 1).fillTriangle(x - 7, headY - 8, x - 1, headY - 12, x + 1, headY - 7);
     g.fillStyle(0x24454b, 1).fillTriangle(torsoX - dir * 4, y - 14 + bounce, torsoX, y - 7 + bounce, torsoX + dir * 3, y - 14 + bounce);
     g.lineStyle(1, 0x8eb0a2, 0.8).lineBetween(torsoX - dir * 9, y - 8 + bounce, torsoX - dir * 9, y + 1 + bounce);
+  }
+  drawAtmosphere() {
+    if (!this.atmosphereArt) return;
+    const art = this.atmosphereArt;
+    const gy = this.getGroundY();
+    const t = this.time.now;
+    art.clear();
+    // A breeze carries loose paper through the sunlit street. Keep the effect
+    // sparse so it adds motion without obscuring clues or the player's feet.
+    for (let i = 0; i < 7; i++) {
+      const baseX = 170 + i * 365;
+      const drift = (t * (0.018 + (i % 3) * 0.006)) % 280;
+      const px = baseX + drift;
+      const py = gy - 65 - ((t * (0.012 + (i % 2) * 0.005) + i * 57) % 185);
+      const flutter = Math.sin(t / 180 + i * 1.4) * 5;
+      art.fillStyle(i % 3 === 0 ? 0xfff1cf : 0xe7f5e9, 0.82);
+      art.fillTriangle(px - 5, py, px + 8 + flutter, py - 2, px + 5, py + 7);
+      art.lineStyle(1, 0xffffff, 0.58).lineBetween(px - 1, py + 1, px + 4, py + 2);
+    }
+    // Tiny sunlit motes appear in the open air, most visible against buildings.
+    for (let i = 0; i < 16; i++) {
+      const px = (i * 193 + t * (0.008 + (i % 4) * 0.002)) % this.worldWidth;
+      const py = 90 + (i * 47 % Math.max(100, gy - 120)) + Math.sin(t / 600 + i) * 7;
+      art.fillStyle(i % 2 ? 0xffffff : 0xfff0a6, 0.22 + (Math.sin(t / 420 + i) + 1) * 0.12);
+      art.fillCircle(px, py, i % 5 === 0 ? 2 : 1.2);
+    }
   }
   update() {
     if (!this.player || !this.player.body) return;
@@ -706,6 +764,7 @@ class MorningScene extends Phaser.Scene {
       this.jumpWasDown = jumpHeld;
     }
     this.drawPlayer();
+    this.drawAtmosphere();
     this.updateClueInterface();
     if (this.game.loop.frame % 3 === 0) this.drawPeople();
   }
