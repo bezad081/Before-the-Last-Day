@@ -4,7 +4,7 @@ A colorful, story-first 2D side-scrolling adventure about an ordinary morning at
 
 ## Play the prototype
 
-The browser prototype uses `index.html` for structure, `styles.css` for presentation, and `game.js` for the Canvas-based game loop and interactions. It uses plain HTML, CSS, and JavaScript, with no install, external assets, or build step.
+The browser game uses Phaser 3.90 for its 2D game loop, Arcade Physics, camera, and input handling. `index.html` contains the page structure, `styles.css` styles the interface, and `game.js` defines the Phaser scene and Chapter 1 logic. Phaser is loaded from jsDelivr, so an internet connection is required when opening the game.
 
 ### Controls
 - **Move:** A / D or Left / Right arrows
@@ -16,7 +16,7 @@ The browser prototype uses `index.html` for structure, `styles.css` for presenta
 
 - `index.html` — accessible page structure and game overlays
 - `styles.css` — responsive interface and touch-control styling
-- `game.js` — rendering, movement, camera, dialogue, and chapter flow
+- `game.js` — Phaser scene, Arcade Physics, camera, movement, dialogue, and chapter flow
 - `story/CHAPTER_01.md` — Chapter 1 story design
 
 The code is intentionally split into separate files before expanding the game systems, making later gameplay, story, and UI changes easier to review and test.
