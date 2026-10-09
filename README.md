@@ -7,10 +7,11 @@ A colorful, story-first 2D side-scrolling adventure about an ordinary morning at
 The browser game uses Phaser 3.90 for its 2D game loop, Arcade Physics, camera, and input handling. `index.html` contains the page structure, `styles.css` styles the interface, and `game.js` defines the Phaser scene and Chapter 1 logic. Phaser is loaded from jsDelivr, so an internet connection is required when opening the game.
 
 ### Controls
-- **Move:** A / D or Left / Right arrows
+- **Walk:** A / D or Left / Right arrows
+- **Run:** hold Shift while moving
 - **Jump:** Space, W, or Up arrow
-- **Continue story dialogue:** E, Enter, or Space
-- **Touch devices:** use the on-screen controls
+- **Inspect nearby clues / continue dialogue:** E or Enter (Space also continues dialogue)
+- **Touch devices:** use the on-screen controls; the return-arrow button inspects nearby clues when no dialogue is open
 
 ## Project structure
 
@@ -25,7 +26,10 @@ The code is intentionally split into separate files before expanding the game sy
 
 - Story intro and controls screen
 - Side-scrolling city environment with layered parallax scenery
-- Direct player movement, jumping, and camera follow
+- Acceleration-based movement, walk/run pacing, jump posing, and camera follow
+- A more articulated original placeholder character with facing, arm/leg swing, breathing, and a backpack silhouette
+- Detailed street furniture, shop awnings, streetlights, planters, drains, and a parked delivery van
+- Optional environmental clues that can be inspected along the route
 - Story dialogue and a chapter-end beat
 - Responsive layout and touch controls
 
