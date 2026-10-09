@@ -133,7 +133,7 @@ class MorningScene extends Phaser.Scene {
     this.floor = this.add.rectangle(
       this.worldWidth / 2, groundY + this.floorHeight / 2,
       this.worldWidth, this.floorHeight, 0x596579
-    ).setOrigin(0.5, 0);
+    ).setOrigin(0.5, 0.5);
     this.physics.add.existing(this.floor, true);
     this.floor.setVisible(false);
     this.floor.body.setSize(this.worldWidth, this.floorHeight);
