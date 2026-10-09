@@ -181,8 +181,8 @@ class MorningScene extends Phaser.Scene {
       button.addEventListener('pointerleave', up);
     });
   }
-  drawWorld() {
-    const width = this.scale.width, height = this.scale.height, gy = this.getGroundY();
+  drawBackground() {
+    const width = this.scale.width, height = this.scale.height;
     this.background.clear();
     this.background.fillGradientStyle(0x172b48, 0x172b48, 0xf5c18d, 0xf5c18d, 1);
     this.background.fillRect(0, 0, width, height);
@@ -203,6 +203,10 @@ class MorningScene extends Phaser.Scene {
         for (let wx = x + 12; wx < x + 84; wx += 19) this.background.fillRect(wx, wy, 6, 8);
       }
     }
+  }
+  drawWorld() {
+    const width = this.scale.width, height = this.scale.height, gy = this.getGroundY();
+    this.drawBackground();
     this.worldArt.clear();
     this.worldArt.fillStyle(0xd9a47f, 1).fillRect(0, gy, this.worldWidth, 12);
     this.worldArt.fillStyle(0x596579, 1).fillRect(0, gy + 12, this.worldWidth, height - gy - 12);
