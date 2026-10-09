@@ -355,6 +355,106 @@ class MorningScene extends Phaser.Scene {
     detail.fillStyle(0x253244, 1).fillCircle(vx + 88, gy - 3, 9);
     detail.fillStyle(0xa9b5b5, 1).fillCircle(vx + 23, gy - 3, 4);
     detail.fillStyle(0xa9b5b5, 1).fillCircle(vx + 88, gy - 3, 4);
+    // Layered architectural details: masonry seams, drainpipes, balconies and shop signs.
+    for (const b of landmarks) {
+      const bh = height * b.h, by = gy - bh;
+      detail.lineStyle(1, 0x182c42, 0.38);
+      for (let row = by + 48; row < gy - 20; row += 58) {
+        detail.lineBetween(b.x + 4, row, b.x + b.w - 4, row);
+      }
+      detail.lineStyle(2, 0x1b2e43, 0.72);
+      detail.lineBetween(b.x + 9, by + 10, b.x + 9, gy - 5);
+      detail.lineBetween(b.x + b.w - 9, by + 10, b.x + b.w - 9, gy - 5);
+      // Window frames and shallow sills make the facades read as buildings.
+      for (let wy = by + 61; wy < gy - 48; wy += 42) {
+        for (let wx = b.x + 14; wx < b.x + b.w - 22; wx += 36) {
+          detail.lineStyle(2, 0x1c3147, 0.9).strokeRect(wx - 2, wy - 2, 22, 26);
+          detail.fillStyle(0xf9dba6, 0.16).fillRect(wx + 2, wy + 2, 5, 7);
+          detail.lineStyle(1, 0x263b51, 0.9).lineBetween(wx + 9, wy, wx + 9, wy + 21);
+          detail.lineStyle(1, 0x263b51, 0.9).lineBetween(wx, wy + 10, wx + 18, wy + 10);
+          detail.lineStyle(2, 0x26394d, 0.95).lineBetween(wx - 3, wy + 25, wx + 23, wy + 25);
+        }
+      }
+      // Downpipes and a few small wall-mounted utility boxes.
+      detail.fillStyle(0x26394d, 0.9).fillRoundedRect(b.x + b.w - 13, by + 8, 4, bh - 10, 2);
+      detail.fillStyle(0x6b8290, 0.7).fillRoundedRect(b.x + 8, gy - 116, 13, 28, 2);
+      detail.fillStyle(0x26394d, 1).fillRect(b.x + 11, gy - 110, 7, 2);
+      detail.fillStyle(0x26394d, 1).fillRect(b.x + 11, gy - 103, 7, 2);
+      // A projecting shop sign gives each location a readable street-level identity.
+      detail.fillStyle(0x172a3e, 1).fillRoundedRect(b.x + b.w / 2 - 35, by + 18, 70, 19, 4);
+      detail.lineStyle(1, 0xe6c89e, 0.85).strokeRoundedRect(b.x + b.w / 2 - 35, by + 18, 70, 19, 4);
+      detail.fillStyle(0xf4d8ae, 0.9).fillRect(b.x + b.w / 2 - 23, by + 25, 46, 2);
+      detail.fillStyle(0xf4d8ae, 0.65).fillCircle(b.x + b.w / 2 - 27, by + 27, 2);
+      detail.fillStyle(0xf4d8ae, 0.65).fillCircle(b.x + b.w / 2 + 27, by + 27, 2);
+    }
+
+    // Pavement seams, cracks and rain-darkened patches break up the flat ground.
+    for (let x = 36; x < this.worldWidth; x += 84) {
+      detail.lineStyle(1, 0x293b50, 0.55).lineBetween(x, gy + 17, x + 31, gy + 17);
+      detail.lineStyle(1, 0x293b50, 0.35).lineBetween(x + 37, gy + 19, x + 55, gy + 19);
+    }
+    const cracks = [
+      [190, gy + 36, 204, gy + 42, 199, gy + 49],
+      [720, gy + 28, 735, gy + 34, 729, gy + 41],
+      [1270, gy + 41, 1284, gy + 36, 1292, gy + 44],
+      [1710, gy + 29, 1724, gy + 36, 1718, gy + 45],
+      [2400, gy + 34, 2414, gy + 29, 2422, gy + 37]
+    ];
+    detail.lineStyle(1.5, 0x29384a, 0.75);
+    for (const c of cracks) {
+      detail.lineBetween(c[0], c[1], c[2], c[3]);
+      detail.lineBetween(c[2], c[3], c[4], c[5]);
+    }
+    // Drain grates and shallow puddles reflect the warm morning sky.
+    for (const x of [315, 875, 1245, 1655, 2020, 2330, 2670]) {
+      detail.fillStyle(0x1c2b3b, 0.9).fillRoundedRect(x, gy + 30, 34, 8, 2);
+      detail.lineStyle(1, 0x87949b, 0.7);
+      for (let k = 0; k < 5; k++) detail.lineBetween(x + 5 + k * 6, gy + 32, x + 5 + k * 6, gy + 36);
+      detail.fillStyle(0x8ca6b0, 0.24).fillEllipse(x + 52, gy + 46, 29, 5);
+      detail.lineStyle(1, 0xf5d6a1, 0.35).lineBetween(x + 42, gy + 45, x + 60, gy + 45);
+    }
+    // A crossing, traffic lights and bollards add a sense of street layout and scale.
+    for (let i = 0; i < 7; i++) {
+      detail.fillStyle(0xe5d9bf, 0.78).fillRoundedRect(1125 + i * 25, gy + 19, 15, 31, 2);
+    }
+    detail.fillStyle(0x29384a, 1).fillRoundedRect(1168, gy - 126, 8, 126, 3);
+    detail.fillStyle(0x1a2b3d, 1).fillRoundedRect(1157, gy - 143, 30, 54, 5);
+    detail.fillStyle(0xe16f68, 0.95).fillCircle(1172, gy - 132, 5);
+    detail.fillStyle(0xe6bd68, 0.35).fillCircle(1172, gy - 116, 5);
+    detail.fillStyle(0x83c6a3, 0.28).fillCircle(1172, gy - 100, 5);
+    detail.fillStyle(0x27384a, 1).fillRoundedRect(1094, gy - 18, 8, 18, 3);
+    detail.fillStyle(0x27384a, 1).fillRoundedRect(1212, gy - 18, 8, 18, 3);
+
+    // A news stand and loose paper suggest the city is still in its normal morning routine.
+    detail.fillStyle(0x293d50, 1).fillRoundedRect(690, gy - 64, 49, 62, 4);
+    detail.fillStyle(0xd9d0b7, 1).fillRoundedRect(696, gy - 58, 37, 25, 2);
+    detail.fillStyle(0xb86e61, 1).fillRect(696, gy - 58, 37, 6);
+    detail.fillStyle(0x435d70, 1).fillRect(701, gy - 47, 26, 2);
+    detail.fillStyle(0x435d70, 1).fillRect(701, gy - 41, 21, 2);
+    detail.fillStyle(0x435d70, 1).fillRect(701, gy - 35, 29, 2);
+    detail.fillStyle(0xd9d0b7, 0.95).fillTriangle(760, gy + 31, 777, gy + 29, 772, gy + 37);
+    detail.lineStyle(1, 0x7b8790, 0.65).lineBetween(764, gy + 32, 772, gy + 32);
+
+    // Overhead cables connect the older storefronts to the street lights.
+    detail.lineStyle(2, 0x1b2c40, 0.65);
+    detail.lineBetween(440, gy - height * 0.36 + 8, 555, gy - height * 0.36 + 26);
+    detail.lineBetween(555, gy - height * 0.36 + 26, 670, gy - height * 0.36 + 11);
+    detail.lineStyle(1, 0x8d9ca2, 0.4);
+    detail.lineBetween(440, gy - height * 0.36 + 11, 555, gy - height * 0.36 + 29);
+    detail.lineBetween(555, gy - height * 0.36 + 29, 670, gy - height * 0.36 + 14);
+
+    // A few low bollards and litter bins give the curb a more lived-in silhouette.
+    for (const x of [470, 1010, 1450, 1945, 2250, 2580]) {
+      detail.fillStyle(0x26394c, 1).fillRoundedRect(x, gy - 16, 10, 16, 3);
+      detail.fillStyle(0x8ca3a7, 0.7).fillRoundedRect(x + 2, gy - 13, 6, 3, 1);
+    }
+    for (const x of [560, 1600, 2460]) {
+      detail.fillStyle(0x293e50, 1).fillRoundedRect(x, gy - 31, 25, 31, 4);
+      detail.fillStyle(0x1c2b3b, 1).fillRoundedRect(x - 2, gy - 34, 29, 5, 2);
+      detail.fillStyle(0x8c9b9e, 0.55).fillRect(x + 5, gy - 25, 15, 2);
+      detail.fillStyle(0x8c9b9e, 0.4).fillRect(x + 5, gy - 20, 15, 2);
+    }
+
     this.floorArt.clear();
     this.floorArt.fillStyle(0xf4d5a0, 1);
     for (let x = 0; x < this.worldWidth; x += 100) this.floorArt.fillRect(x, gy + height * 0.12, 42, 4);
@@ -364,10 +464,31 @@ class MorningScene extends Phaser.Scene {
     this.peopleArt.clear();
     for (let i = 0; i < 18; i++) {
       const x = i * 170 + 70;
-      this.peopleArt.fillStyle([0x344b64, 0x784f5e, 0x526a68][i % 3], 1);
-      this.peopleArt.fillCircle(x, gy - 37, 7);
-      this.peopleArt.fillRoundedRect(x - 6, gy - 30, 12, 25, 4);
+      const sway = Math.sin(this.time.now / 460 + i * 1.7) * 1.5;
+      const step = Math.sin(this.time.now / 210 + i * 2.1) * 2.2;
+      const colors = [0x344b64, 0x784f5e, 0x526a68, 0x9a765b, 0x596c85];
+      this.peopleArt.fillStyle(0x142238, 0.18).fillEllipse(x, gy - 1, 19, 5);
+      this.peopleArt.fillStyle(colors[i % colors.length], 1)
+        .fillRoundedRect(x - 6 + sway, gy - 30, 12, 24, 4);
+      this.peopleArt.fillStyle(0xdeb08c, 1).fillCircle(x + sway, gy - 36, 6.5);
+      this.peopleArt.fillStyle(i % 3 === 0 ? 0x302b35 : 0x4a3b36, 1)
+        .fillEllipse(x + sway, gy - 40, 13, 7);
+      this.peopleArt.lineStyle(3.2, 0x26384b, 1)
+        .lineBetween(x - 3 + sway, gy - 10, x - 4 + step, gy - 2);
+      this.peopleArt.lineStyle(3.2, 0x26384b, 1)
+        .lineBetween(x + 3 + sway, gy - 10, x + 4 - step, gy - 2);
+      this.peopleArt.lineStyle(3, 0xd9a783, 1)
+        .lineBetween(x - 7 + sway, gy - 25, x - 8 - step, gy - 17);
+      this.peopleArt.lineStyle(3, 0xd9a783, 1)
+        .lineBetween(x + 7 + sway, gy - 25, x + 8 + step, gy - 17);
     }
+    // One pedestrian stands still, staring at the station rather than following the crowd.
+    const strangerX = 1615;
+    this.peopleArt.fillStyle(0x152237, 0.22).fillEllipse(strangerX, gy - 1, 22, 5);
+    this.peopleArt.fillStyle(0x9a5c58, 1).fillRoundedRect(strangerX - 7, gy - 32, 14, 26, 4);
+    this.peopleArt.fillStyle(0xd8a782, 1).fillCircle(strangerX, gy - 39, 6.5);
+    this.peopleArt.fillStyle(0x302b35, 1).fillEllipse(strangerX, gy - 43, 13, 7);
+    this.peopleArt.fillStyle(0x2b4054, 1).fillRoundedRect(strangerX - 8, gy - 15, 16, 6, 2);
   }
   drawPlayer() {
     const p = this.player, x = p.x, y = p.y;
