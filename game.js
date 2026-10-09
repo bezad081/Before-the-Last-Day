@@ -127,17 +127,29 @@ class MorningScene extends Phaser.Scene {
     this.playerArt = this.add.graphics().setDepth(10);
     this.floorArt = this.add.graphics().setDepth(-1);
     const groundY = this.getGroundY();
-    this.floor = this.add.rectangle(this.worldWidth / 2, groundY, this.worldWidth, Math.max(1, this.scale.height - groundY), 0x596579).setOrigin(0.5, 0);
+    // Keep the ground as a simple, full-width static platform. Centering the
+    // platform avoids origin/resize drift that can make the player appear to fall.
+    this.floorHeight = Math.max(120, this.scale.height - groundY + 80);
+    this.floor = this.add.rectangle(
+      this.worldWidth / 2, groundY + this.floorHeight / 2,
+      this.worldWidth, this.floorHeight, 0x596579
+    ).setOrigin(0.5, 0);
     this.physics.add.existing(this.floor, true);
     this.floor.setVisible(false);
+    this.floor.body.setSize(this.worldWidth, this.floorHeight);
+    this.floor.body.updateFromGameObject();
+
     this.player = this.add.rectangle(90, groundY - PLAYER_HEIGHT / 2, PLAYER_WIDTH, PLAYER_HEIGHT, 0x000000, 0);
     this.physics.add.existing(this.player);
-    this.player.body.setSize(22, 44);
+    // A slightly narrower collider keeps the drawn boots safely above the floor.
+    this.player.body.setSize(18, 42);
     this.player.body.setCollideWorldBounds(true);
-    this.player.body.setMaxVelocity(RUN_SPEED, 1000);
-    this.player.body.setDamping(true);
-    this.player.body.setDragX(1500);
-    this.player.body.setAccelerationX(0);
+    this.player.body.setMaxVelocity(RUN_SPEED, 720);
+    this.player.body.setDamping(false);
+    this.player.body.setDragX(1900, 0);
+    this.player.body.setAcceleration(0, 0);
+    this.player.body.setBounce(0, 0);
+    this.jumpWasDown = false;
     this.physics.add.collider(this.player, this.floor);
     this.cameras.main.startFollow(this.player, true, 0.08, 0.08);
     this.cameras.main.setDeadzone(this.scale.width * 0.28, this.scale.height * 0.18);
@@ -209,12 +221,18 @@ class MorningScene extends Phaser.Scene {
     this.physics.world.setBounds(0, 0, this.worldWidth, size.height);
     this.cameras.main.setBounds(0, 0, this.worldWidth, size.height);
     this.cameras.main.setDeadzone(size.width * 0.28, size.height * 0.18);
-    this.floor.setPosition(this.worldWidth / 2, groundY);
-    this.floor.setSize(this.worldWidth, Math.max(1, size.height - groundY));
+    this.floorHeight = Math.max(120, size.height - groundY + 80);
+    this.floor.setPosition(this.worldWidth / 2, groundY + this.floorHeight / 2);
+    this.floor.setSize(this.worldWidth, this.floorHeight);
+    this.floor.body.setSize(this.worldWidth, this.floorHeight);
     this.floor.body.updateFromGameObject();
-    if (this.player.body.blocked.down || this.player.y + PLAYER_HEIGHT / 2 > groundY) {
+    // Preserve a jump if the player is genuinely airborne; otherwise snap to
+    // the new ground line so a mobile orientation change cannot strand them.
+    const grounded = this.player.body.blocked.down || this.player.body.touching.down || this.player.body.onFloor();
+    if (grounded || this.player.y + PLAYER_HEIGHT / 2 >= groundY) {
       this.player.setY(groundY - PLAYER_HEIGHT / 2);
       this.player.body.setVelocityY(0);
+      this.player.body.reset(this.player.x, this.player.y);
     }
     this.drawWorld();
   }
@@ -597,15 +615,24 @@ class MorningScene extends Phaser.Scene {
     const left = keyboardLeft || controls.left;
     const right = keyboardRight || controls.right;
     const body = this.player.body;
+    const jumpHeld = this.cursors.up.isDown || this.keys.W.isDown || this.keys.SPACE.isDown || controls.jump;
+    const jumpPressed = jumpHeld && !this.jumpWasDown;
+    this.jumpWasDown = jumpHeld;
     if (this.storyRunning && dialogue.style.display !== 'block' && !this.completed) {
       const dir = (right ? 1 : 0) - (left ? 1 : 0);
       if (dir) this.facing = dir;
       const targetSpeed = this.keys.SHIFT.isDown ? RUN_SPEED : WALK_SPEED;
-      body.setAccelerationX(dir * 1150);
-      if (!dir) body.setAccelerationX(0);
-      body.setMaxVelocity(dir ? targetSpeed : RUN_SPEED, 1000);
-      if ((this.cursors.up.isDown || this.keys.W.isDown || this.keys.SPACE.isDown || controls.jump) && (body.blocked.down || body.touching.down)) {
-        body.setVelocityY(-430);
+      body.setAccelerationX(dir * (dir ? 1500 : 0));
+      body.setMaxVelocity(targetSpeed, 720);
+      // Stop promptly when no direction is held, without the sticky glide caused
+      // by mixing damping and drag. Reverse input also feels immediate.
+      if (!dir && Math.abs(body.velocity.x) < 12) body.setVelocityX(0);
+      if (dir && Math.sign(body.velocity.x) !== dir && Math.abs(body.velocity.x) > 20) {
+        body.setAccelerationX(dir * 1900);
+      }
+      const grounded = body.blocked.down || body.touching.down || body.onFloor();
+      if (jumpPressed && grounded) {
+        body.setVelocityY(-410);
       }
       if (dir) this.walkPhase += Math.max(0.12, Math.abs(body.velocity.x) / 800);
       this.breathPhase += 0.06;
@@ -613,6 +640,7 @@ class MorningScene extends Phaser.Scene {
         if (!this.checkpointsTriggered.has(checkpoint.id) && this.player.x >= checkpoint.x) {
           this.checkpointsTriggered.add(checkpoint.id);
           body.setVelocityX(0);
+          body.setAccelerationX(0);
           showDialogue(0, checkpoint.lines);
           break;
         }
@@ -630,6 +658,7 @@ class MorningScene extends Phaser.Scene {
     } else {
       body.setAccelerationX(0);
       body.setVelocityX(0);
+      this.jumpWasDown = jumpHeld;
     }
     this.drawPlayer();
     this.updateClueInterface();
