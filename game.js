@@ -125,6 +125,7 @@ class MorningScene extends Phaser.Scene {
     this.worldArt = this.add.graphics().setDepth(-5);
     this.peopleArt = this.add.graphics().setDepth(2);
     this.atmosphereArt = this.add.graphics().setDepth(4);
+    this.storyArt = this.add.graphics().setDepth(5);
     this.playerArt = this.add.graphics().setDepth(10);
     this.floorArt = this.add.graphics().setDepth(-1);
     const groundY = this.getGroundY();
@@ -154,6 +155,17 @@ class MorningScene extends Phaser.Scene {
     this.physics.add.collider(this.player, this.floor);
     this.cameras.main.startFollow(this.player, true, 0.08, 0.08);
     this.cameras.main.setDeadzone(this.scale.width * 0.28, this.scale.height * 0.18);
+    // This optional sign pays off the "Platform zero" clue later in the walk.
+    this.platformZeroLabel = this.add.text(STATION_X + 130, this.getGroundY() - 81, 'PLATFORM 0', {
+      fontFamily: 'Trebuchet MS, system-ui, sans-serif',
+      fontSize: '12px',
+      fontStyle: 'bold',
+      color: '#ff647b',
+      stroke: '#17283d',
+      strokeThickness: 3,
+      letterSpacing: 1,
+      align: 'center'
+    }).setOrigin(0.5, 0.5).setDepth(6).setVisible(false);
     this.cursors = this.input.keyboard.createCursorKeys();
     this.keys = this.input.keyboard.addKeys('A,D,W,SPACE,ENTER,E,SHIFT');
     this.input.keyboard.on('keydown-ENTER', () => { if (gameStarted) advanceDialogue(); });
@@ -227,6 +239,7 @@ class MorningScene extends Phaser.Scene {
     this.floor.setSize(this.worldWidth, this.floorHeight);
     this.floor.body.setSize(this.worldWidth, this.floorHeight);
     this.floor.body.updateFromGameObject();
+    if (this.platformZeroLabel) this.platformZeroLabel.setY(groundY - 81);
     // Preserve a jump if the player is genuinely airborne; otherwise snap to
     // the new ground line so a mobile orientation change cannot strand them.
     const grounded = this.player.body.blocked.down || this.player.body.touching.down || this.player.body.onFloor();
@@ -269,11 +282,21 @@ class MorningScene extends Phaser.Scene {
     // Bright, high-contrast morning palette: vivid skies against a city that feels
     // strangely empty. This is an original homage to Zom 100's color energy,
     // not a recreation of its characters or exact shots.
-    this.background.fillGradientStyle(0x35c8f0, 0x35c8f0, 0xffd28a, 0xffd28a, 1);
+    // The palette slowly cools as the player approaches the station. Keep the
+    // early street vivid, then let the sky and sunlight become subtly uneasy.
+    const progress = this.player ? Math.max(0, Math.min(1, (this.player.x - 1450) / 1250)) : 0;
+    const mood = progress * 0.52;
+    const blendColor = (from, to, amount) => {
+      const channel = shift => Math.round(((from >> shift) & 255) * (1 - amount) + ((to >> shift) & 255) * amount);
+      return (channel(16) << 16) | (channel(8) << 8) | channel(0);
+    };
+    const skyColor = blendColor(0x35c8f0, 0x527b9c, mood);
+    const horizonColor = blendColor(0xffd28a, 0xd69b9f, mood);
+    this.background.fillGradientStyle(skyColor, skyColor, horizonColor, horizonColor, 1);
     this.background.fillRect(0, 0, width, height);
-    this.background.fillStyle(0xfff4b0, 0.16);
+    this.background.fillStyle(0xfff4b0, 0.16 - mood * 0.08);
     this.background.fillCircle(width * 0.78, height * 0.25, Math.min(width, height) * 0.19);
-    this.background.fillStyle(0xffef9b, 1);
+    this.background.fillStyle(blendColor(0xffef9b, 0xffa18e, mood));
     this.background.fillCircle(width * 0.78, height * 0.25, Math.min(width, height) * 0.064);
     // Graphic clouds add a clean, illustrative anime-sky silhouette.
     for (let i = 0; i < 5; i++) {
@@ -414,10 +437,14 @@ class MorningScene extends Phaser.Scene {
     detail.fillStyle(0xc79b6e, 1).fillRect(2120, gy - 25, 3, 3);
     detail.fillStyle(0x263548, 1).fillRoundedRect(2148, gy - 30, 11, 18, 2);
     detail.fillStyle(0x83e7d0, 1).fillCircle(2153, gy - 25, 2);
-    const vx = 1040, vy = gy - 34;
-    detail.fillStyle(0x344b60, 1).fillRoundedRect(vx, vy, 112, 29, 6);
-    detail.fillStyle(0x6f9eaa, 1).fillRoundedRect(vx + 12, vy + 4, 33, 12, 3);
+    const vx = 1680, vy = gy - 34;
+    // An ambulance waits outside the clinic, not a generic parked car.
+    detail.fillStyle(0xf0ecdd, 1).fillRoundedRect(vx, vy, 112, 29, 6);
+    detail.fillStyle(0x7399a5, 1).fillRoundedRect(vx + 12, vy + 4, 33, 12, 3);
     detail.fillStyle(0x9db9bc, 1).fillRoundedRect(vx + 51, vy + 4, 22, 12, 3);
+    detail.fillStyle(0xd95059, 1).fillRect(vx + 4, vy + 18, 104, 4);
+    detail.fillStyle(0xd95059, 1).fillRect(vx + 82, vy + 5, 4, 13);
+    detail.fillStyle(0xd95059, 1).fillRect(vx + 77, vy + 9, 14, 4);
     detail.fillStyle(0x253244, 1).fillCircle(vx + 23, gy - 3, 9);
     detail.fillStyle(0x253244, 1).fillCircle(vx + 88, gy - 3, 9);
     detail.fillStyle(0xa9b5b5, 1).fillCircle(vx + 23, gy - 3, 4);
@@ -667,7 +694,11 @@ class MorningScene extends Phaser.Scene {
     this.peopleArt.clear();
     for (let i = 0; i < 18; i++) {
       const panicked = i === 7 && Number.isFinite(this.panicStartTime);
-      const escapeDistance = panicked ? Math.min(220, Math.max(0, this.time.now - this.panicStartTime) * 0.04) : 0;
+      const escapeElapsed = panicked ? Math.max(0, this.time.now - this.panicStartTime) : 0;
+      // Let the frightened commuter actually leave the scene instead of running
+      // in place forever after reaching the edge of the old animation range.
+      if (panicked && escapeElapsed > 5200) continue;
+      const escapeDistance = panicked ? Math.min(340, escapeElapsed * 0.068) : 0;
       const x = panicked ? 1260 + escapeDistance : i * 170 + 70;
       const sway = Math.sin(this.time.now / (panicked ? 190 : 460) + i * 1.7) * (panicked ? 2.4 : 1.5);
       const step = Math.sin(this.time.now / (panicked ? 68 : 210) + i * 2.1) * (panicked ? 7.5 : 2.2);
@@ -833,6 +864,58 @@ class MorningScene extends Phaser.Scene {
     g.fillStyle(0x24454b, 1).fillTriangle(torsoX - dir * 4, y - 14 + bounce, torsoX, y - 7 + bounce, torsoX + dir * 3, y - 14 + bounce);
     g.lineStyle(1, 0x8eb0a2, 0.8).lineBetween(torsoX - dir * 9, y - 8 + bounce, torsoX - dir * 9, y + 1 + bounce);
   }
+  drawStoryEffects() {
+    if (!this.storyArt) return;
+    const art = this.storyArt;
+    const gy = this.getGroundY();
+    const now = this.time.now;
+    art.clear();
+
+    // After the bakery dialogue, a metal shutter slowly seals the shop. The
+    // movement continues while the player reads, making the scene feel alive.
+    if (Number.isFinite(this.bakeryEventStartTime)) {
+      const amount = Math.max(0, Math.min(1, (now - this.bakeryEventStartTime) / 1900));
+      const bakery = landmarks[0];
+      const shutterX = bakery.x + bakery.w * 0.35 + 5;
+      const shutterW = bakery.w * 0.3 - 10;
+      const shutterTop = gy - 62;
+      const shutterH = 57 * amount;
+      if (shutterH > 0) {
+        art.fillStyle(0x344a58, 0.98).fillRect(shutterX, shutterTop, shutterW, shutterH);
+        for (let y = shutterTop + 5; y < shutterTop + shutterH; y += 6) {
+          art.lineStyle(1, 0x91a5a8, 0.72).lineBetween(shutterX + 2, y, shutterX + shutterW - 2, y);
+        }
+        art.fillStyle(0xffd166, 0.88).fillRect(shutterX, shutterTop + shutterH - 2, shutterW, 2);
+      }
+    }
+
+    // The clinic's ambulance beacon only starts after the player reaches the
+    // clinic. Alternating reflections turn the empty vehicle into a story beat.
+    if (Number.isFinite(this.clinicEventStartTime)) {
+      const pulse = (Math.sin((now - this.clinicEventStartTime) / 145) + 1) / 2;
+      const redAlpha = 0.28 + pulse * 0.62;
+      const blueAlpha = 0.28 + (1 - pulse) * 0.62;
+      art.fillStyle(0xe55360, 0.06 + pulse * 0.09).fillEllipse(1736, gy - 3, 104, 25);
+      art.fillStyle(0xe55360, redAlpha).fillEllipse(1728, gy - 38, 14, 6);
+      art.fillStyle(0x56cfe8, blueAlpha).fillEllipse(1744, gy - 38, 14, 6);
+      art.fillStyle(0xe55360, 0.08 + pulse * 0.16)
+        .fillTriangle(1728, gy - 38, 1685, gy - 12, 1719, gy - 28);
+      art.fillStyle(0x56cfe8, 0.08 + (1 - pulse) * 0.16)
+        .fillTriangle(1744, gy - 38, 1790, gy - 12, 1752, gy - 28);
+      art.fillStyle(0xf6e8d3, 0.13 + pulse * 0.16).fillEllipse(1688, gy - 1, 44, 11);
+    }
+
+    // Finding the public phone makes a hidden station message appear later.
+    // It is a small visual reward for paying attention, not mandatory progress.
+    const phoneClue = this.clues.find(clue => clue.id === 'phone');
+    const revealSignal = !!(phoneClue && phoneClue.discovered && this.player && this.player.x > 2200);
+    if (this.platformZeroLabel) {
+      this.platformZeroLabel.setVisible(revealSignal);
+      if (revealSignal) {
+        this.platformZeroLabel.setAlpha(0.48 + (Math.sin(now / 125) + 1) * 0.25);
+      }
+    }
+  }
   drawAtmosphere() {
     if (!this.atmosphereArt) return;
     const art = this.atmosphereArt;
@@ -890,7 +973,9 @@ class MorningScene extends Phaser.Scene {
       for (const checkpoint of checkpoints) {
         if (!this.checkpointsTriggered.has(checkpoint.id) && this.player.x >= checkpoint.x) {
           this.checkpointsTriggered.add(checkpoint.id);
+          if (checkpoint.id === 'bakery') this.bakeryEventStartTime = this.time.now;
           if (checkpoint.id === 'alert') this.panicStartTime = this.time.now;
+          if (checkpoint.id === 'clinic') this.clinicEventStartTime = this.time.now;
           body.setVelocityX(0);
           body.setAccelerationX(0);
           showDialogue(0, checkpoint.lines);
@@ -914,6 +999,7 @@ class MorningScene extends Phaser.Scene {
     }
     this.drawPlayer();
     this.drawAtmosphere();
+    this.drawStoryEffects();
     this.updateClueInterface();
     if (this.game.loop.frame % 3 === 0) {
       // Redraw the screen-fixed skyline with the current camera offset so its
