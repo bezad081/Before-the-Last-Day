@@ -54,6 +54,77 @@ const controls = {left:false,right:false,jump:false};
 let sceneRef = null;
 let gameStarted = false;
 let activeDialogueLines = null;
+let activeChoiceMode = false;
+const journalEntries = [];
+const journalPanel = document.getElementById('journal');
+const journalItems = document.getElementById('journal-items');
+const journalToggle = document.getElementById('journal-toggle');
+const journalClose = document.getElementById('journal-close');
+const choiceArea = document.getElementById('dialogue-choices');
+const continueHint = document.querySelector('#dialogue .next');
+
+function renderJournal() {
+  if (!journalItems) return;
+  journalItems.replaceChildren();
+  if (!journalEntries.length) {
+    const empty = document.createElement('p');
+    empty.className = 'journal-empty';
+    empty.textContent = 'No field notes yet. Inspect objects and talk to people to record what you learn.';
+    journalItems.appendChild(empty);
+  } else {
+    for (const entry of [...journalEntries].reverse()) {
+      const card = document.createElement('article');
+      card.className = 'journal-entry';
+      const tag = document.createElement('span');
+      tag.className = 'journal-tag';
+      tag.textContent = entry.kind || 'FIELD NOTE';
+      const heading = document.createElement('h3');
+      heading.textContent = entry.title;
+      const body = document.createElement('p');
+      body.textContent = entry.body;
+      card.append(tag, heading, body);
+      journalItems.appendChild(card);
+    }
+  }
+  if (journalToggle) journalToggle.textContent = 'FIELD NOTES · ' + journalEntries.length + ' [J]';
+}
+function addJournalEntry(id, title, body, kind = 'CLUE') {
+  if (journalEntries.some(entry => entry.id === id)) return;
+  journalEntries.push({id, title, body, kind});
+  renderJournal();
+}
+function toggleJournal(force) {
+  if (!journalPanel || !gameStarted) return;
+  const shouldOpen = typeof force === 'boolean' ? force : journalPanel.hidden;
+  journalPanel.hidden = !shouldOpen;
+  if (journalToggle) journalToggle.setAttribute('aria-expanded', String(shouldOpen));
+}
+function showChoiceDialogue(speakerName, message, choices) {
+  activeDialogueLines = null;
+  activeChoiceMode = true;
+  document.getElementById('speaker').textContent = speakerName;
+  document.getElementById('line').textContent = message;
+  choiceArea.replaceChildren();
+  for (const choice of choices) {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = choice.primary ? 'story-choice primary' : 'story-choice secondary';
+    button.textContent = choice.label;
+    button.addEventListener('click', choice.onChoose);
+    choiceArea.appendChild(button);
+  }
+  choiceArea.hidden = false;
+  if (continueHint) continueHint.style.display = 'none';
+  dialogue.style.display = 'block';
+}
+function clearDialogueChoices() {
+  activeChoiceMode = false;
+  if (choiceArea) {
+    choiceArea.hidden = true;
+    choiceArea.replaceChildren();
+  }
+  if (continueHint) continueHint.style.display = '';
+}
 
 function showToast(message) {
   toast.textContent = message;
@@ -62,6 +133,7 @@ function showToast(message) {
   toastTimer = window.setTimeout(() => { toast.style.opacity = '0'; }, 2400);
 }
 function showDialogue(index, lines = story) {
+  clearDialogueChoices();
   activeDialogueLines = lines;
   if (index < 0 || index >= lines.length) {
     dialogue.style.display = 'none';
@@ -73,7 +145,7 @@ function showDialogue(index, lines = story) {
   dialogue.style.display = 'block';
 }
 function advanceDialogue() {
-  if (dialogue.style.display !== 'block') return;
+  if (dialogue.style.display !== 'block' || activeChoiceMode) return;
   const lines = activeDialogueLines || story;
   const current = Number(dialogue.dataset.index || 0);
   if (current >= lines.length - 1) {
@@ -99,6 +171,17 @@ document.getElementById('how').addEventListener('click', () => {
   help.hidden = false;
 });
 document.getElementById('back').addEventListener('click', beginGame);
+if (journalToggle) journalToggle.addEventListener('click', () => toggleJournal());
+if (journalClose) journalClose.addEventListener('click', () => toggleJournal(false));
+document.addEventListener('keydown', event => {
+  if (event.key.toLowerCase() === 'j' && gameStarted && !event.repeat) {
+    event.preventDefault();
+    toggleJournal();
+  }
+  if (event.key === 'Escape') {
+    toggleJournal(false);
+  }
+});
 
 class MorningScene extends Phaser.Scene {
   constructor() {
@@ -112,7 +195,10 @@ class MorningScene extends Phaser.Scene {
     this.strangerSpoken = false;
     this.routeHintUnlocked = false;
     this.checkpointsTriggered = new Set();
+    this.suitcaseDecision = null;
+    this.voiceMemoFound = false;
     this.clues = [
+      {id:'bike', x:1215, radius:76, title:'ABANDONED BICYCLE', text:'The bicycle was not dropped in a crash: the kickstand is down, but the brake cable has been cut cleanly. A transit worker badge is caught under the rear light.', discovered:false},
       {id:'note', x:945, radius:105, title:'A CRUMPLED NOTE', text:'The damp note reads: “If the trains stop, do not follow the crowd underground.” No signature. No date.', discovered:false},
       {id:'phone', x:1510, radius:112, title:'A PUBLIC PHONE', text:'The receiver is off the hook. A faint voice repeats a station announcement, then dissolves into static. Beneath the static, you hear someone whisper: “Platform zero.”', discovered:false},
       {id:'case', x:2135, radius:120, title:'ABANDONED SUITCASE', text:'A phone rings inside the suitcase pocket. The lock is scratched from the inside. Someone has carved three short lines into the handle.', discovered:false}
@@ -227,6 +313,7 @@ class MorningScene extends Phaser.Scene {
     if (!this.strangerSpoken && Math.abs(this.player.x - 1615) <= 76) {
       this.strangerSpoken = true;
       this.routeHintUnlocked = true;
+      addJournalEntry('stranger-route', 'The stranger’s warning', 'Avoid the main entrance. Follow the blue stripe toward a side gate; the station board showed Platform 0 before the public alert.', 'TESTIMONY');
       this.updateClueInterface();
       showDialogue(0, [
         ['STRANGER', 'Don’t use the main entrance. The board flashed “Platform 0” before the city alert appeared.'],
@@ -239,7 +326,7 @@ class MorningScene extends Phaser.Scene {
     const spot = this.clues.filter(item => Math.abs(this.player.x - item.x) <= item.radius)
       .sort((a,b) => Math.abs(this.player.x-a.x)-Math.abs(this.player.x-b.x))[0];
     if (!spot) {
-      showToast('Move closer to a note, phone, or suitcase to inspect it.');
+      showToast('Move closer to a clue, a stranger, or the suitcase to interact.');
       return;
     }
     if (spot.discovered) {
@@ -247,7 +334,41 @@ class MorningScene extends Phaser.Scene {
       return;
     }
     spot.discovered = true;
+    addJournalEntry(spot.id, spot.title, spot.text, 'FOUND CLUE');
     this.updateClueInterface();
+    if (spot.id === 'case') {
+      showChoiceDialogue('ABANDONED SUITCASE', 'The phone inside stops ringing. The zipper is half-open. Something metallic clicks when you touch the side pocket. What do you do?', [
+        {
+          label: 'Open the side pocket',
+          primary: true,
+          onChoose: () => {
+            this.suitcaseDecision = 'opened';
+            this.voiceMemoFound = true;
+            addJournalEntry('voice-memo', 'Recovered voice memo', 'A damaged recorder contains a clipped message: “...the gate is not locked from this side. If you hear three knocks, do not answer.” The recording ends with the station chime.', 'RECORDED MESSAGE');
+            showDialogue(0, [
+              ['YOU', 'There’s a recorder tucked under the lining. Someone hid it in a hurry.'],
+              ['RECORDER', '...the gate is not locked from this side. If you hear three knocks, do not answer.'],
+              ['NARRATOR', 'You pocket the recorder. The scratched suitcase lock suddenly feels less like damage and more like a warning.']
+            ]);
+            showToast('Voice memo added to Field Notes.');
+          }
+        },
+        {
+          label: 'Leave it closed',
+          primary: false,
+          onChoose: () => {
+            this.suitcaseDecision = 'left';
+            addJournalEntry('suitcase-left', 'A choice at the suitcase', 'You chose not to open the case. Whatever is inside stays unknown, but you avoid touching a possible source of danger.', 'DECISION');
+            showDialogue(0, [
+              ['YOU', 'No. We don’t know what’s in there. We keep moving.'],
+              ['MIRA', 'For once, I’m glad you’re thinking before acting.'],
+              ['NARRATOR', 'You leave the ringing phone behind. The unanswered question follows you toward the station.']
+            ]);
+          }
+        }
+      ]);
+      return;
+    }
     showDialogue(0, [[spot.title, spot.text], ['NARRATOR', 'You remember the detail. It may matter later.']]);
   }
   handleResize(size) {
@@ -949,6 +1070,10 @@ class MorningScene extends Phaser.Scene {
         art.fillStyle(0x7af4e7, pulse).fillTriangle(x + 10, gy + 25, x, gy + 18, x, gy + 32);
         art.fillStyle(0x203d52, 0.42).fillTriangle(x + 7, gy + 25, x + 1, gy + 21, x + 1, gy + 29);
       }
+      // A second, narrower trace leads from the side gate toward a service hatch.
+      art.lineStyle(2, 0xffd166, 0.45 + pulse * 0.25);
+      art.lineBetween(STATION_X + 42, gy + 18, STATION_X + 42, gy - 55);
+      art.lineBetween(STATION_X + 42, gy - 55, STATION_X + 78, gy - 55);
     }
 
     // Finding the public phone makes a hidden station message appear later.
@@ -1036,9 +1161,19 @@ class MorningScene extends Phaser.Scene {
         this.completed = true;
         chapter.textContent = 'CHAPTER 01 · COMPLETE';
         dialogue.style.display = 'block';
-        document.getElementById('speaker').textContent = 'END OF DEMO';
-        document.getElementById('line').textContent = 'You reach the station just as the first screams rise behind you. The next chapter begins soon.';
-        showToast('Chapter 01 complete — more story is coming.');
+        clearDialogueChoices();
+        document.getElementById('speaker').textContent = 'END OF CHAPTER 01';
+        const hasPhone = this.clues.some(clue => clue.id === 'phone' && clue.discovered);
+        const endingLine = this.suitcaseDecision === 'opened'
+          ? 'The recorder crackles in your pocket as the station doors slide shut. You have a warning, a stranger’s route, and one place left to test them: Platform 0.'
+          : this.suitcaseDecision === 'left'
+            ? 'You reach the station with the stranger’s blue route beneath your feet. Behind you, the abandoned phone begins ringing again. You chose safety over answers—for now.'
+            : hasPhone
+              ? 'The words “Platform zero” echo in your memory as the main entrance locks. You found a signal, but not the person who sent it.'
+              : 'You reach the station just as the first screams rise behind you. The main entrance is locked. Somewhere beyond the wall, a train arrives without making a sound.';
+        document.getElementById('line').textContent = endingLine;
+        addJournalEntry('chapter-ending', 'Chapter 01: the last normal morning', endingLine, 'ENDING');
+        showToast(this.suitcaseDecision ? 'Chapter ending shaped by your choice.' : 'Chapter 01 complete — more story is coming.');
       }
     } else {
       body.setAccelerationX(0);
