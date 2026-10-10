@@ -10,11 +10,13 @@
 <body>
 <div id="game">
 <div class="topbar"><div class="brand">✦ Before the Last Day</div><div class="chapter" id="chapter">PROLOGUE · 01</div></div>
+<button id="journal-toggle" class="journal-toggle" type="button" aria-expanded="false" hidden>FIELD NOTES · 0 [J]</button>
+<aside id="journal" class="journal-panel" aria-label="Field Notes" hidden><div class="journal-header"><div><span class="eyebrow">Investigation log</span><h2>Field Notes</h2></div><button id="journal-close" class="journal-close" type="button" aria-label="Close Field Notes">×</button></div><p class="journal-intro">Everything you notice can change what you believe.</p><div id="journal-items" class="journal-items"></div><div class="journal-foot">Press J or Esc to close</div></aside>
 <div class="hud" id="hud" hidden><div class="pill">DAY <b>01</b> / LAST NORMAL MORNING</div><div class="pill">OBJECTIVE <b id="objective">Reach the station</b></div></div>
 <div id="toast"></div>
 <div class="card" id="intro"><div class="eyebrow">A small story about the end of ordinary life</div><h1>Before the<br><span>Last Day.</span></h1><p>The city is waking up. The trains are late, the coffee is too hot, and your phone won't stop buzzing. It should be an ordinary morning.</p><p>Walk through a world on the edge of change. Look closely. Keep moving. The story will unfold as you play.</p><div class="actions"><button class="primary" id="start">Begin the story&nbsp; →</button><button class="secondary" id="how">How to play</button></div><div class="hint">CHAPTER 01 — THE MORNING THAT DIDN'T END</div></div>
 <div class="card" id="help" hidden><div class="eyebrow">Controls</div><h1>Take it<br><span>one step at a time.</span></h1><p><b>Walk:</b> A / D or ← / → &nbsp; <b>Run:</b> Shift + direction<br><b>Jump:</b> Space / W / ↑ &nbsp; <b>Inspect / continue:</b> E / Enter<br><b>Mobile:</b> use the on-screen buttons near points of interest.</p><p>Reach the station at the far end of the street. Some things in the background may be worth noticing.</p><div class="actions"><button class="primary" id="back">Got it — let's go</button></div></div>
-<div id="dialogue"><div class="speaker" id="speaker">NARRATOR</div><div class="line" id="line"></div><div class="next">CONTINUE ↵</div></div>
+<div id="dialogue"><div class="speaker" id="speaker">NARRATOR</div><div class="line" id="line"></div><div id="dialogue-choices" class="dialogue-choices" hidden></div><div class="next">CONTINUE ↵</div></div>
 <div id="mobile"><div class="pad"><button class="touch" data-key="left" aria-label="Move left">←</button><button class="touch" data-key="right" aria-label="Move right">→</button></div><div class="pad"><button class="touch" data-key="jump" aria-label="Jump">↑</button><button class="touch" data-key="talk" aria-label="Inspect or continue">↵</button></div></div>
 <div id="footer">A STORY ADVENTURE · DEMO BUILD</div>
 </div>
