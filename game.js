@@ -109,6 +109,8 @@ class MorningScene extends Phaser.Scene {
     this.walkPhase = 0;
     this.facing = 1;
     this.breathPhase = 0;
+    this.strangerSpoken = false;
+    this.routeHintUnlocked = false;
     this.checkpointsTriggered = new Set();
     this.clues = [
       {id:'note', x:945, radius:105, title:'A CRUMPLED NOTE', text:'The damp note reads: “If the trains stop, do not follow the crowd underground.” No signature. No date.', discovered:false},
@@ -204,9 +206,13 @@ class MorningScene extends Phaser.Scene {
     const found = this.clues.filter(c => c.discovered).length;
     this.clueCounter.style.display = gameStarted ? 'block' : 'none';
     this.clueCounter.textContent = 'CLUES FOUND  ' + found + ' / ' + this.clues.length;
+    const strangerNearby = !this.strangerSpoken && Math.abs(this.player.x - 1615) <= 76;
     const nearest = this.clues.filter(c => !c.discovered && Math.abs(this.player.x - c.x) <= c.radius)
       .sort((a,b) => Math.abs(this.player.x-a.x)-Math.abs(this.player.x-b.x))[0];
-    if (nearest && this.storyRunning && dialogue.style.display !== 'block' && !this.completed) {
+    if (this.storyRunning && dialogue.style.display !== 'block' && !this.completed && strangerNearby) {
+      this.clueHint.textContent = 'E  ·  TALK TO THE STRANGER';
+      this.clueHint.style.display = 'block';
+    } else if (nearest && this.storyRunning && dialogue.style.display !== 'block' && !this.completed) {
       this.clueHint.textContent = 'E  ·  INSPECT ' + nearest.title;
       this.clueHint.style.display = 'block';
     } else {
@@ -215,6 +221,21 @@ class MorningScene extends Phaser.Scene {
   }
   interactWithStreet() {
     if (!this.player || dialogue.style.display === 'block' || this.completed) return;
+    // The stranger offers an optional conversation before the player reaches
+    // the clinic. It has priority only inside the small talking radius, so the
+    // nearby public-phone clue remains independently discoverable.
+    if (!this.strangerSpoken && Math.abs(this.player.x - 1615) <= 76) {
+      this.strangerSpoken = true;
+      this.routeHintUnlocked = true;
+      this.updateClueInterface();
+      showDialogue(0, [
+        ['STRANGER', 'Don’t use the main entrance. The board flashed “Platform 0” before the city alert appeared.'],
+        ['YOU', 'How do you know that?'],
+        ['STRANGER', 'There’s a blue stripe leading toward a side gate. It wasn’t there this morning. Stay on it.']
+      ]);
+      showToast('A new route clue has been added.');
+      return;
+    }
     const spot = this.clues.filter(item => Math.abs(this.player.x - item.x) <= item.radius)
       .sort((a,b) => Math.abs(this.player.x-a.x)-Math.abs(this.player.x-b.x))[0];
     if (!spot) {
@@ -743,13 +764,24 @@ class MorningScene extends Phaser.Scene {
       this.peopleArt.lineStyle(3, 0x26384b, 1).lineBetween(px - 3, gy - 10, px - 5, gy - 2);
       this.peopleArt.lineStyle(3, 0x26384b, 1).lineBetween(px + 3, gy - 10, px + 5, gy - 2);
     }
-    // One pedestrian stands still, staring at the station rather than following the crowd.
+    // The stranger has a small idle sway and raises an arm after speaking,
+    // making the optional character read differently from the anonymous crowd.
     const strangerX = 1615;
+    const nervousSway = Math.sin(this.time.now / 340) * 1.3;
+    const gesture = this.strangerSpoken ? Math.sin(this.time.now / 260) * 2.5 : 0;
     this.peopleArt.fillStyle(0x152237, 0.22).fillEllipse(strangerX, gy - 1, 22, 5);
-    this.peopleArt.fillStyle(0x9a5c58, 1).fillRoundedRect(strangerX - 7, gy - 32, 14, 26, 4);
-    this.peopleArt.fillStyle(0xd8a782, 1).fillCircle(strangerX, gy - 39, 6.5);
-    this.peopleArt.fillStyle(0x302b35, 1).fillEllipse(strangerX, gy - 43, 13, 7);
-    this.peopleArt.fillStyle(0x2b4054, 1).fillRoundedRect(strangerX - 8, gy - 15, 16, 6, 2);
+    this.peopleArt.fillStyle(0x9a5c58, 1).fillRoundedRect(strangerX - 7 + nervousSway, gy - 32, 14, 26, 4);
+    this.peopleArt.fillStyle(0xd8a782, 1).fillCircle(strangerX + nervousSway, gy - 39, 6.5);
+    this.peopleArt.fillStyle(0x302b35, 1).fillEllipse(strangerX + nervousSway, gy - 43, 13, 7);
+    this.peopleArt.fillStyle(0x2b4054, 1).fillRoundedRect(strangerX - 8 + nervousSway, gy - 15, 16, 6, 2);
+    this.peopleArt.lineStyle(3, 0x9a5c58, 1)
+      .lineBetween(strangerX - 6 + nervousSway, gy - 26, strangerX - 13 + gesture, gy - 19 - (this.strangerSpoken ? 5 : 0));
+    this.peopleArt.fillStyle(0xd8a782, 1)
+      .fillCircle(strangerX - 13 + gesture, gy - 19 - (this.strangerSpoken ? 5 : 0), 2.6);
+    if (this.strangerSpoken) {
+      this.peopleArt.lineStyle(1.5, 0x7ddbd4, 0.9)
+        .lineBetween(strangerX - 19, gy - 29, strangerX - 24, gy - 32);
+    }
   }
   drawPlayer() {
     const p = this.player, x = p.x, y = p.y;
@@ -905,6 +937,20 @@ class MorningScene extends Phaser.Scene {
       art.fillStyle(0xf6e8d3, 0.13 + pulse * 0.16).fillEllipse(1688, gy - 1, 44, 11);
     }
 
+    // An optional conversation unlocks a painted route along the road. Its
+    // arrows sit in the environment rather than in a separate UI panel.
+    if (this.routeHintUnlocked) {
+      const pulse = 0.52 + (Math.sin(now / 210) + 1) * 0.12;
+      art.lineStyle(5, 0x35d7d0, pulse);
+      for (let x = 1668; x < STATION_X + 95; x += 70) {
+        art.lineBetween(x, gy + 25, x + 34, gy + 25);
+      }
+      for (let x = 1715; x < STATION_X + 70; x += 105) {
+        art.fillStyle(0x7af4e7, pulse).fillTriangle(x + 10, gy + 25, x, gy + 18, x, gy + 32);
+        art.fillStyle(0x203d52, 0.42).fillTriangle(x + 7, gy + 25, x + 1, gy + 21, x + 1, gy + 29);
+      }
+    }
+
     // Finding the public phone makes a hidden station message appear later.
     // It is a small visual reward for paying attention, not mandatory progress.
     const phoneClue = this.clues.find(clue => clue.id === 'phone');
@@ -983,7 +1029,9 @@ class MorningScene extends Phaser.Scene {
         }
       }
       const progress = Math.min(100, Math.round(this.player.x / (this.worldWidth - 100) * 100));
-      objective.textContent = progress < 30 ? 'Reach the station' : progress < 58 ? 'Follow the main street' : progress < 84 ? 'Something feels wrong…' : 'Find the station entrance';
+      objective.textContent = this.routeHintUnlocked && this.player.x >= 1600
+        ? (this.player.x < STATION_X ? 'Follow the blue line' : 'Find Platform 0')
+        : progress < 30 ? 'Reach the station' : progress < 58 ? 'Follow the main street' : progress < 84 ? 'Something feels wrong…' : 'Find the station entrance';
       if (this.player.x > this.worldWidth - 170) {
         this.completed = true;
         chapter.textContent = 'CHAPTER 01 · COMPLETE';
