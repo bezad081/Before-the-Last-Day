@@ -312,6 +312,9 @@ class MorningScene extends Phaser.Scene {
   }
   drawWorld() {
     const width = this.scale.width, height = this.scale.height, gy = this.getGroundY();
+    // Rebuild scene labels on resize without leaving duplicate Phaser text objects behind.
+    if (this.landmarkLabels) this.landmarkLabels.forEach(label => label.destroy());
+    this.landmarkLabels = [];
     this.drawBackground();
     this.worldArt.clear();
     this.worldArt.fillStyle(0xf2a77b, 1).fillRect(0, gy, this.worldWidth, 12);
@@ -450,6 +453,117 @@ class MorningScene extends Phaser.Scene {
       detail.fillStyle(0xf4d8ae, 0.9).fillRect(b.x + b.w / 2 - 23, by + 25, 46, 2);
       detail.fillStyle(0xf4d8ae, 0.65).fillCircle(b.x + b.w / 2 - 27, by + 27, 2);
       detail.fillStyle(0xf4d8ae, 0.65).fillCircle(b.x + b.w / 2 + 27, by + 27, 2);
+    }
+
+    // Give each landmark a distinct silhouette and readable identity instead of
+    // repeating the same window grid: bakery warmth, book spines, flowers, clinic
+    // signage, and a transit clock make the walk feel like a real neighborhood.
+    const storefrontStyle = {
+      'BAKERY': {sign:0xb85f47, text:'SUNRISE BAKERY'},
+      'BOOKSHOP': {sign:0x595b94, text:'PAPER MOON BOOKS'},
+      'FLOWERS': {sign:0x377f72, text:'PETAL & STEM'},
+      'CITY CLINIC': {sign:0x326a7b, text:'CITY CLINIC'},
+      'CENTRAL STATION': {sign:0x273e58, text:'CENTRAL STATION'}
+    };
+    for (const b of landmarks) {
+      const cx = b.x + b.w / 2;
+      const style = storefrontStyle[b.label];
+      const boardWidth = b.w - 24;
+      const boardX = b.x + 12;
+      const boardY = gy - height * b.h + 18;
+      // Replace the generic projecting plaque with a wide, location-specific sign.
+      detail.fillStyle(style.sign, 1).fillRoundedRect(boardX, boardY, boardWidth, 23, 4);
+      detail.lineStyle(1, 0xffe4b8, 0.82).strokeRoundedRect(boardX, boardY, boardWidth, 23, 4);
+      detail.fillStyle(0xffffff, 0.1).fillRect(boardX + 4, boardY + 3, boardWidth - 8, 2);
+      const label = this.add.text(cx, boardY + 12, style.text, {
+        fontFamily: 'Trebuchet MS, system-ui, sans-serif',
+        fontSize: b.label === 'CENTRAL STATION' ? 12 : 10,
+        fontStyle: 'bold',
+        color: '#fff4dc',
+        stroke: '#1c3044',
+        strokeThickness: 2,
+        align: 'center',
+        fixedWidth: boardWidth - 12
+      }).setOrigin(0.5, 0.5).setDepth(-4);
+      this.landmarkLabels.push(label);
+
+      if (b.label === 'BAKERY') {
+        // Warm window light, bread on the shelf, and a small hanging bread emblem.
+        detail.fillStyle(0x3c4c54, 1).fillRoundedRect(b.x + 14, gy - 84, 42, 43, 3);
+        detail.fillStyle(0xffd39a, 0.92).fillRect(b.x + 18, gy - 80, 34, 35);
+        detail.fillStyle(0xf5a95f, 1).fillEllipse(b.x + 28, gy - 61, 12, 8);
+        detail.fillStyle(0xe88b4b, 1).fillEllipse(b.x + 42, gy - 59, 13, 9);
+        detail.lineStyle(1, 0xffe8bd, 0.9).lineBetween(b.x + 20, gy - 50, b.x + 49, gy - 50);
+        detail.fillStyle(0x6c443a, 1).fillRoundedRect(b.x + b.w - 58, gy - 79, 39, 36, 3);
+        detail.fillStyle(0xffcc8a, 1).fillEllipse(b.x + b.w - 39, gy - 61, 17, 11);
+        detail.lineStyle(2, 0xffe7bc, 0.8).lineBetween(b.x + b.w - 44, gy - 63, b.x + b.w - 41, gy - 59);
+        detail.fillStyle(0x497d65, 1).fillRoundedRect(b.x + 7, gy - 27, 12, 13, 2);
+        detail.fillStyle(0xff7581, 1).fillCircle(b.x + 10, gy - 29, 4);
+        detail.fillStyle(0xffd166, 1).fillCircle(b.x + 17, gy - 30, 4);
+      } else if (b.label === 'BOOKSHOP') {
+        // Individually colored book spines show through the display window.
+        detail.fillStyle(0x27394c, 1).fillRoundedRect(b.x + 13, gy - 88, 58, 47, 3);
+        detail.fillStyle(0xa8d9dc, 0.55).fillRect(b.x + 17, gy - 84, 50, 39);
+        const bookColors = [0xff7187,0xffd166,0x58c9b6,0x9da8f4,0xef9b62,0x7cb6df];
+        for (let i = 0; i < bookColors.length; i++) {
+          const bx = b.x + 19 + i * 7;
+          const bh = 19 + (i % 3) * 5;
+          detail.fillStyle(bookColors[i], 1).fillRoundedRect(bx, gy - 47 - bh, 6, bh, 1);
+          detail.fillStyle(0xfff0ca, 0.8).fillRect(bx + 1, gy - 47 - bh + 4, 4, 1);
+        }
+        detail.fillStyle(0x344b62, 1).fillRoundedRect(b.x + b.w - 72, gy - 86, 53, 43, 3);
+        detail.fillStyle(0xf1d9ad, 0.9).fillRect(b.x + b.w - 67, gy - 80, 43, 2);
+        detail.fillStyle(0x7a89b8, 1).fillRect(b.x + b.w - 67, gy - 75, 13, 25);
+        detail.fillStyle(0xd77883, 1).fillRect(b.x + b.w - 51, gy - 71, 10, 21);
+        detail.fillStyle(0x55bba9, 1).fillRect(b.x + b.w - 38, gy - 78, 9, 28);
+      } else if (b.label === 'FLOWERS') {
+        // Tall display windows and little flower buckets make this shop instantly distinct.
+        detail.fillStyle(0x38565a, 1).fillRoundedRect(b.x + 12, gy - 88, 48, 45, 3);
+        detail.fillStyle(0xc1e8d8, 0.72).fillRect(b.x + 16, gy - 84, 40, 37);
+        detail.fillStyle(0x8d6450, 1).fillRoundedRect(b.x + 17, gy - 55, 14, 10, 2);
+        detail.fillStyle(0x8d6450, 1).fillRoundedRect(b.x + 37, gy - 55, 14, 10, 2);
+        for (const flower of [{x:b.x+22,y:gy-64,c:0xff6684},{x:b.x+30,y:gy-70,c:0xffd166},{x:b.x+42,y:gy-65,c:0x9ba5ff},{x:b.x+49,y:gy-73,c:0xffffff}]) {
+          detail.fillStyle(0x3d956d, 1).lineStyle(2,0x3d956d,1).lineBetween(flower.x,flower.y+3,flower.x,gy-55);
+          detail.fillStyle(flower.c, 1).fillCircle(flower.x, flower.y, 4);
+          detail.fillStyle(0xffe2a0, 1).fillCircle(flower.x, flower.y, 1.4);
+        }
+        detail.fillStyle(0x476f5b, 1).fillRoundedRect(b.x + b.w - 57, gy - 84, 42, 41, 3);
+        detail.fillStyle(0xc5e4c9, 0.7).fillRect(b.x + b.w - 53, gy - 80, 34, 33);
+        for (let i = 0; i < 4; i++) {
+          const fx = b.x + b.w - 47 + i * 8;
+          detail.lineStyle(2,0x2d8b63,1).lineBetween(fx,gy-52,fx,gy-72-(i%2)*5);
+          detail.fillStyle([0xf27691,0xffcb64,0x83a9ff,0xf5f0dd][i],1).fillCircle(fx,gy-73-(i%2)*5,3.5);
+        }
+      } else if (b.label === 'CITY CLINIC') {
+        // A high-contrast medical cross, glass entrance and a simple reception window.
+        detail.fillStyle(0xf6f1db, 1).fillRoundedRect(b.x + b.w - 46, gy - height * b.h + 59, 27, 27, 4);
+        detail.fillStyle(0xd95059, 1).fillRect(b.x + b.w - 35, gy - height * b.h + 63, 6, 19);
+        detail.fillStyle(0xd95059, 1).fillRect(b.x + b.w - 41, gy - height * b.h + 69, 18, 6);
+        detail.fillStyle(0x214b61, 1).fillRoundedRect(b.x + 18, gy - 88, 45, 44, 3);
+        detail.fillStyle(0x8bd2d0, 0.83).fillRect(b.x + 22, gy - 84, 37, 36);
+        detail.fillStyle(0xf4f2dd, 0.95).fillRoundedRect(b.x + b.w - 82, gy - 82, 49, 38, 3);
+        detail.fillStyle(0x4e9da2, 1).fillRect(b.x + b.w - 75, gy - 75, 35, 3);
+        detail.fillStyle(0x4e9da2, 0.75).fillRect(b.x + b.w - 75, gy - 67, 24, 2);
+        detail.fillStyle(0xe7f2df, 0.85).fillRoundedRect(b.x + b.w / 2 - 23, gy - 67, 46, 67, 3);
+        detail.fillStyle(0x355c69, 1).fillRoundedRect(b.x + b.w / 2 - 18, gy - 62, 36, 62, 3);
+        detail.lineStyle(1, 0xb9dce0, 0.8).lineBetween(cx, gy - 62, cx, gy - 4);
+      } else if (b.label === 'CENTRAL STATION') {
+        // A station clock and platform boards replace the ordinary shop windows.
+        detail.fillStyle(0x21364e, 1).fillCircle(cx, gy - height * b.h + 68, 24);
+        detail.fillStyle(0xffe9bb, 1).fillCircle(cx, gy - height * b.h + 68, 19);
+        detail.lineStyle(2, 0x2a4a63, 1).lineBetween(cx, gy - height * b.h + 68, cx, gy - height * b.h + 55);
+        detail.lineStyle(2, 0x2a4a63, 1).lineBetween(cx, gy - height * b.h + 68, cx + 10, gy - height * b.h + 72);
+        detail.fillStyle(0x1c334a, 1).fillRoundedRect(b.x + 18, gy - 92, b.w - 36, 22, 3);
+        detail.fillStyle(0x77ddd0, 1).fillRect(b.x + 28, gy - 84, b.w - 56, 3);
+        for (let i = 0; i < 3; i++) {
+          const px = b.x + 38 + i * 78;
+          detail.fillStyle(i === 1 ? 0xffd166 : 0xfff0cf, 0.9).fillTriangle(px,gy-77,px+7,gy-83,px+14,gy-77);
+        }
+        detail.fillStyle(0x273e56, 1).fillRoundedRect(b.x + 17, gy - 58, 36, 49, 3);
+        detail.fillStyle(0x8dd6d1, 0.85).fillRect(b.x + 21, gy - 54, 28, 39);
+        detail.fillStyle(0x273e56, 1).fillRoundedRect(b.x + b.w - 53, gy - 58, 36, 49, 3);
+        detail.fillStyle(0x8dd6d1, 0.85).fillRect(b.x + b.w - 49, gy - 54, 28, 39);
+      }
     }
 
     // Pavement seams, cracks and rain-darkened patches break up the flat ground.
