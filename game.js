@@ -566,6 +566,31 @@ class MorningScene extends Phaser.Scene {
       }
     }
 
+    // The cyclist's abandoned bicycle lies across the crossing: the story's
+    // warning becomes a tangible object before the player reaches the station.
+    const bikeX = 1210, wheelY = gy - 10;
+    detail.lineStyle(2.7, 0x263b4f, 0.98);
+    detail.strokeCircle(bikeX, wheelY, 11);
+    detail.strokeCircle(bikeX + 47, wheelY, 11);
+    detail.lineStyle(1, 0x9eb0b5, 0.72);
+    detail.lineBetween(bikeX - 7, wheelY, bikeX + 7, wheelY);
+    detail.lineBetween(bikeX + 40, wheelY, bikeX + 54, wheelY);
+    detail.fillStyle(0x263b4f, 1).fillCircle(bikeX, wheelY, 2.2);
+    detail.fillStyle(0x263b4f, 1).fillCircle(bikeX + 47, wheelY, 2.2);
+    detail.lineStyle(3, 0x43b9ae, 1);
+    detail.lineBetween(bikeX, wheelY, bikeX + 21, wheelY);
+    detail.lineBetween(bikeX + 21, wheelY, bikeX + 15, wheelY - 20);
+    detail.lineBetween(bikeX + 15, wheelY - 20, bikeX, wheelY);
+    detail.lineBetween(bikeX + 15, wheelY - 20, bikeX + 34, wheelY - 21);
+    detail.lineBetween(bikeX + 34, wheelY - 21, bikeX + 21, wheelY);
+    detail.lineBetween(bikeX + 34, wheelY - 21, bikeX + 47, wheelY);
+    detail.lineStyle(3, 0x263b4f, 1);
+    detail.lineBetween(bikeX + 11, wheelY - 23, bikeX + 20, wheelY - 23);
+    detail.lineBetween(bikeX + 31, wheelY - 24, bikeX + 39, wheelY - 30);
+    detail.lineBetween(bikeX + 36, wheelY - 30, bikeX + 44, wheelY - 30);
+    detail.lineStyle(2, 0xffd166, 0.95).lineBetween(bikeX + 43, wheelY - 6, bikeX + 49, wheelY - 6);
+    detail.fillStyle(0xffd166, 1).fillCircle(bikeX + 21, wheelY, 3.2);
+    detail.fillStyle(0x263b4f, 0.9).fillEllipse(bikeX + 24, wheelY + 16, 16, 3);
     // Pavement seams, cracks and rain-darkened patches break up the flat ground.
     for (let x = 36; x < this.worldWidth; x += 84) {
       detail.lineStyle(1, 0x293b50, 0.55).lineBetween(x, gy + 17, x + 31, gy + 17);
@@ -641,13 +666,15 @@ class MorningScene extends Phaser.Scene {
     const gy = this.getGroundY();
     this.peopleArt.clear();
     for (let i = 0; i < 18; i++) {
-      const x = i * 170 + 70;
-      const sway = Math.sin(this.time.now / 460 + i * 1.7) * 1.5;
-      const step = Math.sin(this.time.now / 210 + i * 2.1) * 2.2;
+      const panicked = i === 7 && Number.isFinite(this.panicStartTime);
+      const escapeDistance = panicked ? Math.min(220, Math.max(0, this.time.now - this.panicStartTime) * 0.04) : 0;
+      const x = panicked ? 1260 + escapeDistance : i * 170 + 70;
+      const sway = Math.sin(this.time.now / (panicked ? 190 : 460) + i * 1.7) * (panicked ? 2.4 : 1.5);
+      const step = Math.sin(this.time.now / (panicked ? 68 : 210) + i * 2.1) * (panicked ? 7.5 : 2.2);
       const colors = [0x344b64, 0x784f5e, 0x526a68, 0x9a765b, 0x596c85];
       this.peopleArt.fillStyle(0x142238, 0.18).fillEllipse(x, gy - 1, 19, 5);
-      this.peopleArt.fillStyle(colors[i % colors.length], 1)
-        .fillRoundedRect(x - 6 + sway, gy - 30, 12, 24, 4);
+      this.peopleArt.fillStyle(panicked ? 0xc85d62 : colors[i % colors.length], 1)
+        .fillRoundedRect(x - 6 + sway + (panicked ? 2 : 0), gy - 30, 12, 24, 4);
       this.peopleArt.fillStyle(0xdeb08c, 1).fillCircle(x + sway, gy - 36, 6.5);
       this.peopleArt.fillStyle(i % 3 === 0 ? 0x302b35 : 0x4a3b36, 1)
         .fillEllipse(x + sway, gy - 40, 13, 7);
@@ -656,9 +683,16 @@ class MorningScene extends Phaser.Scene {
       this.peopleArt.lineStyle(3.2, 0x26384b, 1)
         .lineBetween(x + 3 + sway, gy - 10, x + 4 - step, gy - 2);
       this.peopleArt.lineStyle(3, 0xd9a783, 1)
-        .lineBetween(x - 7 + sway, gy - 25, x - 8 - step, gy - 17);
+        .lineBetween(x - 7 + sway, gy - 25, x - 8 - step * (panicked ? 0.72 : 1), gy - 17 - (panicked ? Math.abs(step) * 0.28 : 0));
       this.peopleArt.lineStyle(3, 0xd9a783, 1)
-        .lineBetween(x + 7 + sway, gy - 25, x + 8 + step, gy - 17);
+        .lineBetween(x + 7 + sway, gy - 25, x + 8 + step * (panicked ? 0.72 : 1), gy - 17 - (panicked ? Math.abs(step) * 0.28 : 0));
+      if (panicked) {
+        // Lean forward and add two short speed marks to distinguish panic from
+        // the other commuters' small idle steps.
+        this.peopleArt.fillStyle(0xc85d62, 1).fillTriangle(x - 3, gy - 30, x + 7, gy - 28, x + 3, gy - 24);
+        this.peopleArt.lineStyle(1.5, 0xfff0cf, 0.8).lineBetween(x - 17, gy - 26, x - 12, gy - 23);
+        this.peopleArt.lineStyle(1.5, 0xfff0cf, 0.65).lineBetween(x - 20, gy - 20, x - 15, gy - 17);
+      }
     }
     // More varied clothing silhouettes keep the street from reading as repeated icons.
     const extras = [
@@ -856,6 +890,7 @@ class MorningScene extends Phaser.Scene {
       for (const checkpoint of checkpoints) {
         if (!this.checkpointsTriggered.has(checkpoint.id) && this.player.x >= checkpoint.x) {
           this.checkpointsTriggered.add(checkpoint.id);
+          if (checkpoint.id === 'alert') this.panicStartTime = this.time.now;
           body.setVelocityX(0);
           body.setAccelerationX(0);
           showDialogue(0, checkpoint.lines);
