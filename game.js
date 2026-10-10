@@ -109,7 +109,9 @@ function showChoiceDialogue(speakerName, message, choices) {
     const button = document.createElement('button');
     button.type = 'button';
     button.className = choice.primary ? 'story-choice primary' : 'story-choice secondary';
-    button.textContent = choice.label;
+    const choiceNumber = choiceArea.childElementCount + 1;
+    button.textContent = choiceNumber + '  ·  ' + choice.label;
+    button.dataset.choiceIndex = String(choiceNumber - 1);
     button.addEventListener('click', choice.onChoose);
     choiceArea.appendChild(button);
   }
@@ -175,6 +177,14 @@ document.getElementById('back').addEventListener('click', beginGame);
 if (journalToggle) journalToggle.addEventListener('click', () => toggleJournal());
 if (journalClose) journalClose.addEventListener('click', () => toggleJournal(false));
 document.addEventListener('keydown', event => {
+  if (activeChoiceMode && (event.key === '1' || event.key === '2') && !event.repeat) {
+    const button = choiceArea.querySelectorAll('button')[Number(event.key) - 1];
+    if (button) {
+      event.preventDefault();
+      button.click();
+      return;
+    }
+  }
   if (event.key.toLowerCase() === 'j' && gameStarted && !event.repeat) {
     event.preventDefault();
     toggleJournal();
