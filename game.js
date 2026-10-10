@@ -160,6 +160,7 @@ function beginGame() {
   intro.hidden = true;
   help.hidden = true;
   hud.hidden = false;
+  if (journalToggle) journalToggle.hidden = false;
   gameStarted = true;
   if (sceneRef) sceneRef.startStory();
   showDialogue(0);
@@ -1123,7 +1124,7 @@ class MorningScene extends Phaser.Scene {
     const jumpHeld = this.cursors.up.isDown || this.keys.W.isDown || this.keys.SPACE.isDown || controls.jump;
     const jumpPressed = jumpHeld && !this.jumpWasDown;
     this.jumpWasDown = jumpHeld;
-    if (this.storyRunning && dialogue.style.display !== 'block' && !this.completed) {
+    if (this.storyRunning && dialogue.style.display !== 'block' && !(journalPanel && !journalPanel.hidden) && !this.completed) {
       const dir = (right ? 1 : 0) - (left ? 1 : 0);
       if (dir) this.facing = dir;
       const targetSpeed = this.keys.SHIFT.isDown ? RUN_SPEED : WALK_SPEED;
