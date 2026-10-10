@@ -13,3 +13,36 @@ canvas{width:100%;height:100%;display:block;image-rendering:auto}
 #mobile{position:absolute;left:14px;right:14px;bottom:16px;display:none;justify-content:space-between;align-items:end;pointer-events:none}.pad,.jump{display:flex;gap:8px;pointer-events:auto}.touch{width:54px;height:54px;border-radius:16px;background:#122239aa;border:1px solid #ffffff44;color:#fff;font-size:20px;touch-action:none;backdrop-filter:blur(6px)}.touch:active{background:#ffd166cc;color:#17253b}
 #footer{position:absolute;right:18px;bottom:16px;color:#fff9;font-size:10px;letter-spacing:.08em;pointer-events:none}
 @media(max-width:650px){.topbar{top:10px;left:12px;right:12px}.hud{top:48px;left:12px}.pill{padding:7px 9px;font-size:10px}#mobile{display:flex}#footer{display:none}#dialogue{bottom:92px}.card{padding:24px}.card p{font-size:13px}}
+
+/* Field Notes overlay: readable on desktop and small screens without hiding the game. */
+.journal-toggle{position:absolute;z-index:22;top:56px;right:18px;padding:9px 12px;border-radius:12px;background:#17394acc;border:1px solid #6fe0d044;color:#c8fff0;font-size:11px;font-weight:900;letter-spacing:.05em;box-shadow:0 8px 24px #10273b44}
+.journal-toggle:hover,.journal-toggle:focus-visible{background:#215b69;outline:2px solid #ffda59;outline-offset:2px}
+.journal-panel{position:absolute;z-index:35;top:104px;right:18px;bottom:84px;width:min(350px,calc(100% - 36px));display:flex;flex-direction:column;overflow:hidden;background:linear-gradient(155deg,rgba(18,43,60,.97),rgba(20,31,49,.97));border:1px solid #7ae0d866;border-radius:20px;box-shadow:0 22px 70px #07101e99;backdrop-filter:blur(14px)}
+.journal-panel[hidden],.journal-toggle[hidden],.dialogue-choices[hidden]{display:none!important}
+.journal-header{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:18px 18px 10px;border-bottom:1px solid #ffffff18}
+.journal-header h2{margin:6px 0 0;font-size:24px;letter-spacing:-.04em;color:#fff4d7}
+.journal-close{width:34px;height:34px;border-radius:10px;background:#ffffff12;border:1px solid #ffffff26;color:#fff;font-size:23px;line-height:1}
+.journal-intro{margin:12px 18px;color:#b9d0d7;font-size:12px;line-height:1.5}
+.journal-items{overflow:auto;min-height:0;padding:0 14px 12px;display:flex;flex-direction:column;gap:10px}
+.journal-entry{padding:12px 13px;border-radius:13px;background:#ffffff08;border:1px solid #ffffff18;border-left:3px solid #55e0c0}
+.journal-tag{display:inline-block;color:#ffda59;font-size:9px;font-weight:900;letter-spacing:.13em}
+.journal-entry h3{margin:5px 0 6px;font-size:13px;color:#fff8e9}
+.journal-entry p,.journal-empty{margin:0;color:#bed0d7;font-size:12px;line-height:1.55}
+.journal-empty{padding:14px 5px}
+.journal-foot{padding:10px 16px;border-top:1px solid #ffffff18;color:#8faab8;font-size:10px;letter-spacing:.04em}
+.dialogue-choices{display:flex;flex-wrap:wrap;gap:9px;margin:15px 0 2px}
+.story-choice{font-size:12px;padding:10px 13px;border-radius:11px;box-shadow:none;white-space:normal}
+.story-choice.primary{box-shadow:0 3px 0 #bd8d3f}
+.story-choice.secondary{background:#ffffff10;border-color:#ffffff32}
+#dialogue:has(.dialogue-choices:not([hidden])) .next{display:none}
+@media(max-width:650px){
+  .journal-toggle{top:87px;right:12px;padding:7px 9px;font-size:9px}
+  .journal-panel{top:126px;right:10px;bottom:88px;width:calc(100% - 20px);border-radius:16px}
+  .journal-header{padding:14px 14px 9px}
+  .journal-header h2{font-size:21px}
+  .journal-intro{margin:10px 14px}
+  .journal-items{padding:0 10px 10px}
+  .dialogue-choices{flex-direction:column}
+  .story-choice{width:100%;text-align:left}
+  #dialogue{max-height:46vh;overflow:auto}
+}
